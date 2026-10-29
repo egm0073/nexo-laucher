@@ -1,0 +1,25 @@
+# Nexo Launcher
+
+Launcher minimalista para Android al estilo Niagara, con más opciones en la pantalla principal.
+
+## Funciones
+
+- **Lista de apps por texto**, sin iconos por defecto, con buscador y barra de letras A–Z.
+- **Iconos opcionales** por separado en inicio y en el cajón: sin iconos, color, grises o silueta monocroma.
+- **Widgets**: cualquier widget de tus apps, más reloj, fecha, batería y próxima alarma integrados.
+- **Carpetas** que se despliegan en la propia lista de inicio.
+- **Apps ocultas**, que se pueden volver a mostrar desde Ajustes.
+- **Personalización**: color del texto, color de acento, fuente, tamaño, alineación y oscurecido del fondo.
+- Gestos: deslizar arriba abre las apps, deslizar abajo abre las notificaciones, mantener pulsado el fondo abre el menú.
+
+## Instalar
+
+1. Descarga `NexoLauncher.apk` (sección *Releases* del repositorio) en el móvil.
+2. Ábrelo y permite instalar apps de origen desconocido si te lo pide.
+3. Pulsa el botón Inicio y elige **Nexo Launcher** como predeterminado.
+
+## Compilar
+
+Cada `push` a GitHub compila el APK con GitHub Actions. En local: abre la carpeta en Android Studio y ejecuta `gradle :app:assembleRelease`.
+
+Requisitos: Android 8.0 o superior.
