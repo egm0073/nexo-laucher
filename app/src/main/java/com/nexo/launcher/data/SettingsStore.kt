@@ -47,7 +47,6 @@ class SettingsStore(private val context: Context) {
         val lastUsed = stringPreferencesKey("last_used")
         val kidsApp = stringPreferencesKey("kids_app")
         val kidsMode = booleanPreferencesKey("kids_mode")
-        val kidsPrevFilter = intPreferencesKey("kids_prev_filter")
     }
 
     val settings: Flow<LauncherSettings> = context.dataStore.data.map { read(it) }
@@ -90,7 +89,6 @@ class SettingsStore(private val context: Context) {
                 .toMap(),
             kidsApp = p[K.kidsApp],
             kidsMode = p[K.kidsMode] ?: d.kidsMode,
-            kidsPrevFilter = p[K.kidsPrevFilter] ?: d.kidsPrevFilter,
             loaded = true,
         )
     }
@@ -122,7 +120,6 @@ class SettingsStore(private val context: Context) {
         p[K.lastUsed] = JSONObject(s.lastUsed).toString()
         if (s.kidsApp != null) p[K.kidsApp] = s.kidsApp else p.remove(K.kidsApp)
         p[K.kidsMode] = s.kidsMode
-        p[K.kidsPrevFilter] = s.kidsPrevFilter
     }
 
     private companion object {

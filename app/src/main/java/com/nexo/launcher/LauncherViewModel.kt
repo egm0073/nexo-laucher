@@ -61,9 +61,7 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     // --- Modo cuentos ---
     fun setKidsApp(key: String) = update { it.copy(kidsApp = key) }
 
-    fun startKidsMode(prevFilter: Int) = update { it.copy(kidsMode = true, kidsPrevFilter = prevFilter) }
-
-    fun endKidsMode() = update { it.copy(kidsMode = false, kidsPrevFilter = -1) }
+    fun setKidsMode(on: Boolean) = update { it.copy(kidsMode = on) }
 
     // --- Carpetas ---
     fun createFolder(name: String, firstApp: String?) = update { s ->

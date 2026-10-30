@@ -10,7 +10,7 @@ Launcher minimalista para Android al estilo Niagara, con más opciones en la pan
 - **Widgets**: cualquier widget de tus apps, más reloj, fecha, batería y próxima alarma integrados.
 - **Siluetas de teléfono, WhatsApp, mensajes y cámara** (negras y semitransparentes) siempre al pie de la pantalla de inicio.
 - **YouTube y YouTube Music** fijos al principio de la lista de inicio.
-- **Modo cuentos**: bloquea el móvil en una app (por ejemplo, de cuentos para niños) con la función «Fijar aplicación» de Android, y activa No molestar para que no entren llamadas. Solo se sale con el PIN del móvil. Mantén pulsado el fondo → *Modo cuentos*.
+- **Modo cuentos**: bloquea el móvil en una app (por ejemplo, de cuentos para niños) con la función «Fijar aplicación» de Android. Solo se sale con el PIN del móvil. Mantén pulsado el fondo → *Modo cuentos*.
 - **Carpetas** que se despliegan en la propia lista de inicio.
 - **Apps ocultas**, que se pueden volver a mostrar desde Ajustes.
 - **Personalización**: color del texto, color de acento, fuente (incluye nueve tipografías finas: Inter, Lato, Manrope, Nunito Sans, Work Sans, Montserrat, Raleway, Jost y Quicksand), tamaño, alineación y oscurecido del fondo.

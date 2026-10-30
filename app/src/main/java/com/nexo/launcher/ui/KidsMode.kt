@@ -49,8 +49,8 @@ import kotlinx.coroutines.withTimeoutOrNull
 private const val HOLD_TO_EXIT_MS = 3000L
 
 /**
- * Prepara el modo cuentos: app elegida, «Fijar aplicaciones» activado y permiso de No molestar.
- * Los ajustes se vuelven a comprobar al volver de la pantalla del sistema.
+ * Prepara el modo cuentos: app elegida y «Fijar aplicaciones» activado.
+ * El ajuste se vuelve a comprobar al volver de la pantalla del sistema.
  */
 @Composable
 fun KidsModeDialog(
@@ -63,7 +63,6 @@ fun KidsModeDialog(
     var refresh by remember { mutableIntStateOf(0) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { refresh++ }
     val pinning = remember(refresh) { lock.pinningEnabled() }
-    val dnd = remember(refresh) { lock.hasDndAccess() }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -87,14 +86,6 @@ fun KidsModeDialog(
                     },
                     action = if (pinning == true) null else "Abrir Ajustes",
                     onAction = lock::openPinningSettings,
-                )
-                Step(
-                    done = dnd,
-                    title = "3. Bloquear llamadas",
-                    detail = if (dnd) "Se activará No molestar mientras dure el modo cuentos (solo suenan las alarmas)."
-                    else "Opcional: permite a Nexo Launcher usar No molestar para que no entren llamadas.",
-                    action = if (dnd) null else "Permitir",
-                    onAction = lock::openDndAccessSettings,
                 )
                 Spacer(Modifier.height(12.dp))
                 Text("Al empezar", fontWeight = FontWeight.Bold)

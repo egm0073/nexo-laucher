@@ -299,7 +299,7 @@ fun LauncherApp(
                     onStart = {
                         val app = kidsApp
                         if (app != null) {
-                            vm.startKidsMode(kidsLock.silenceCalls())
+                            vm.setKidsMode(true)
                             dialog = null
                             screen = Screen.HOME
                             vm.repo.launch(app)
@@ -327,10 +327,7 @@ fun LauncherApp(
                 KidsModeOverlay(
                     kidsApp = kidsApp,
                     onBack = { kidsApp?.let { vm.repo.launch(it) } },
-                    onEnd = {
-                        kidsLock.restore(settings.kidsPrevFilter)
-                        vm.endKidsMode()
-                    },
+                    onEnd = { vm.setKidsMode(false) },
                 )
             }
         }
