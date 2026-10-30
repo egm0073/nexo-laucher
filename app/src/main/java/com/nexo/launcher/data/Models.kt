@@ -12,6 +12,15 @@ enum class FontChoice(val label: String) {
     SERIF("Serif"),
     MONO("Mono"),
     CURSIVE("Manuscrita"),
+    INTER("Inter"),
+    LATO("Lato"),
+    MANROPE("Manrope"),
+    NUNITO_SANS("Nunito Sans"),
+    WORK_SANS("Work Sans"),
+    MONTSERRAT("Montserrat"),
+    RALEWAY("Raleway"),
+    JOST("Jost"),
+    QUICKSAND("Quicksand"),
 }
 
 enum class AlignChoice(val label: String) {

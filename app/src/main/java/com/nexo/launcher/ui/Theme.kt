@@ -8,10 +8,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
+import com.nexo.launcher.R
 import com.nexo.launcher.data.AlignChoice
 import com.nexo.launcher.data.FontChoice
 import com.nexo.launcher.data.LauncherSettings
@@ -22,11 +24,39 @@ val AccentPalette: List<Long> = listOf(
     0xFFFFFFFF,
 )
 
+// Las fuentes incluidas se usan un grado más finas de lo habitual: el texto normal
+// sale en Light (300), el medio en Regular (400) y el fino en ExtraLight (200).
+private fun thinFamily(extraLight: Int, light: Int, regular: Int, medium: Int) = FontFamily(
+    Font(extraLight, FontWeight.Light),
+    Font(light, FontWeight.Normal),
+    Font(regular, FontWeight.Medium),
+    Font(medium, FontWeight.SemiBold),
+)
+
+private val Inter = thinFamily(R.font.inter_200, R.font.inter_300, R.font.inter_400, R.font.inter_500)
+private val Lato = thinFamily(R.font.lato_300, R.font.lato_300, R.font.lato_400, R.font.lato_400)
+private val Manrope = thinFamily(R.font.manrope_200, R.font.manrope_300, R.font.manrope_400, R.font.manrope_500)
+private val NunitoSans = thinFamily(R.font.nunitosans_200, R.font.nunitosans_300, R.font.nunitosans_400, R.font.nunitosans_500)
+private val WorkSans = thinFamily(R.font.worksans_200, R.font.worksans_300, R.font.worksans_400, R.font.worksans_500)
+private val Montserrat = thinFamily(R.font.montserrat_200, R.font.montserrat_300, R.font.montserrat_400, R.font.montserrat_500)
+private val Raleway = thinFamily(R.font.raleway_200, R.font.raleway_300, R.font.raleway_400, R.font.raleway_500)
+private val Jost = thinFamily(R.font.jost_200, R.font.jost_300, R.font.jost_400, R.font.jost_500)
+private val Quicksand = thinFamily(R.font.quicksand_300, R.font.quicksand_300, R.font.quicksand_400, R.font.quicksand_500)
+
 fun FontChoice.family(): FontFamily = when (this) {
     FontChoice.SANS -> FontFamily.SansSerif
     FontChoice.SERIF -> FontFamily.Serif
     FontChoice.MONO -> FontFamily.Monospace
     FontChoice.CURSIVE -> FontFamily.Cursive
+    FontChoice.INTER -> Inter
+    FontChoice.LATO -> Lato
+    FontChoice.MANROPE -> Manrope
+    FontChoice.NUNITO_SANS -> NunitoSans
+    FontChoice.WORK_SANS -> WorkSans
+    FontChoice.MONTSERRAT -> Montserrat
+    FontChoice.RALEWAY -> Raleway
+    FontChoice.JOST -> Jost
+    FontChoice.QUICKSAND -> Quicksand
 }
 
 fun AlignChoice.horizontal(): Alignment.Horizontal = when (this) {
