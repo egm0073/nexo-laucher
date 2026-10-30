@@ -23,13 +23,15 @@ enum class AppCategory(val label: String) {
 
 /**
  * Se buscan antes que la categoría declarada: ChatGPT o Keep se declaran como «productividad»
- * y WhatsApp o Telegram como «redes sociales», pero aquí la mensajería va en Comunicación.
+ * y WhatsApp o Telegram como «redes sociales», pero aquí la mensajería y el correo van en Comunicación.
  */
 private val PRIORITY_KEYWORDS: List<Pair<AppCategory, List<String>>> = listOf(
     AppCategory.COMMUNICATION to listOf(
         "whatsapp", "telegram", "challegram", "signal", "securesms", "messag", "orca", "sms", "mms",
         "viber", "wechat", "tencent.mm", "line", "discord", "skype", "teams", "slack", "threema",
-        "wire", "kakao", "beeper", "zalo", "imo", "botim",
+        "wire", "kakao", "beeper", "zalo", "imo", "botim", "mlite",
+        // Correo: Gmail (com.google.android.gm), Outlook, etc.
+        "gm", "mail", "email", "outlook", "protonmail", "thunderbird", "k9", "tutanota",
     ),
     AppCategory.AI to listOf(
         "ai", "openai", "chatgpt", "anthropic", "claude", "bard", "copilot", "perplexity",
