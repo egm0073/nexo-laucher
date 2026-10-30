@@ -12,20 +12,39 @@ enum class AppCategory(val label: String) {
     GAMES("Juegos"),
     NEWS("Noticias y lectura"),
     MAPS("Mapas y viajes"),
+    TRANSPORT("Transportes"),
     BANKS("Bancos"),
     SHOPPING("Compras y pagos"),
     AI("Inteligencia artificial"),
     NOTES("Notas y guardados"),
+    SERVICES("Servicios"),
     PRODUCTIVITY("Productividad"),
     TOOLS("Herramientas y sistema"),
     OTHER("Otras"),
 }
 
 /**
- * Categorías que Android no distingue: se buscan antes que la categoría declarada, porque
- * por ejemplo ChatGPT o Keep se declaran como «productividad».
+ * Se buscan antes que la categoría declarada: ChatGPT o Keep se declaran como «productividad»
+ * y WhatsApp o Telegram como «redes sociales», pero aquí la mensajería y el correo van en Comunicación.
  */
 private val PRIORITY_KEYWORDS: List<Pair<AppCategory, List<String>>> = listOf(
+    AppCategory.COMMUNICATION to listOf(
+        "whatsapp", "telegram", "challegram", "signal", "securesms", "messag", "orca", "sms", "mms",
+        "viber", "wechat", "tencent.mm", "line", "discord", "skype", "teams", "slack", "threema",
+        "wire", "kakao", "beeper", "zalo", "imo", "botim", "mlite",
+        // Correo: Gmail (com.google.android.gm), Outlook, etc.
+        "gm", "mail", "email", "outlook", "protonmail", "thunderbird", "k9", "tutanota",
+    ),
+    // Administración y servicios públicos: BiblioJCyL, Sacyl Conecta (com.citaprevia), Cl@ve (es.aeat.pin24h)…
+    AppCategory.SERVICES to listOf(
+        "bibliojcyl", "biblioteca", "jcyl", "sacyl", "citaprevia", "aeat", "gob", "clave", "dgt", "midgt",
+        "sepe", "segsocial", "seguridadsocial", "correos", "carpetaciudadana", "dnie",
+    ),
+    AppCategory.TRANSPORT to listOf(
+        "taxi", "taxis", "nortaxi", "norttaxi", "radiotaxi", "mytaxi", "ntaxi", "ubercab", "cabify", "bolt", "mtakso", "freenow", "renfe", "alsa", "moovit",
+        "citymapper", "transit", "blablacar", "ouigo", "iryo", "emt", "metro", "auvasa", "bus", "cooltra",
+        "limebike", "telpark", "elparking", "easypark", "zity",
+    ),
     AppCategory.AI to listOf(
         "ai", "openai", "chatgpt", "anthropic", "claude", "bard", "copilot", "perplexity",
         "deepseek", "mistral", "grok", "poe", "character", "inflection", "replika", "huggingface",
@@ -36,7 +55,7 @@ private val PRIORITY_KEYWORDS: List<Pair<AppCategory, List<String>>> = listOf(
         "ing", "revolut", "n26", "number26", "bankinter", "unicaja", "kutxabank", "ibercaja", "abanca",
         "evo", "evobanco", "imaginbank", "cajamar", "ruralvia", "cajarural", "deutschebank", "triodos",
         "myinvestor", "transferwise", "hsbc", "barclays", "citi", "wellsfargo", "bunq",
-        "monzo", "selfbank", "pibank", "laboralkutxa", "cajasur",
+        "monzo", "selfbank", "pibank", "laboralkutxa", "cajalaboral", "cajasur",
     ),
     AppCategory.NOTES to listOf(
         "keep", "notes", "note", "evernote", "notion", "obsidian", "onenote", "instapaper", "readitlater",
@@ -73,8 +92,8 @@ private val KEYWORDS: List<Pair<AppCategory, List<String>>> = listOf(
         "wikipedia", "comic",
     ),
     AppCategory.MAPS to listOf(
-        "maps", "waze", "ubercab", "cabify", "bolt", "booking", "airbnb", "renfe", "tripadvisor", "citymapper",
-        "moovit", "transit", "navigation", "flight", "ryanair", "vueling", "iberia", "blablacar",
+        "maps", "waze", "booking", "airbnb", "tripadvisor", "navigation", "flight", "ryanair", "vueling",
+        "iberia",
     ),
     AppCategory.SHOPPING to listOf(
         "amazon", "shop", "ebay", "aliexpress", "wallapop", "vinted", "shein", "temu", "zara", "lidl",
