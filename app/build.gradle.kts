@@ -16,11 +16,25 @@ android {
         versionName = "1.0"
     }
 
+    // Clave de firma fija (secretos de GitHub, ver build.yml): así cada APK nuevo se instala
+    // encima del anterior. Sin ella se firma con la clave de depuración.
+    val keystore = file("release.jks")
+    val keystorePassword = System.getenv("SIGNING_PASSWORD")
+    signingConfigs {
+        if (keystore.exists() && !keystorePassword.isNullOrEmpty()) {
+            create("release") {
+                storeFile = keystore
+                storePassword = keystorePassword
+                keyAlias = "nexo"
+                keyPassword = keystorePassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
-            // Firmado con la clave de depuración para poder instalarlo directamente.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
     }
     compileOptions {

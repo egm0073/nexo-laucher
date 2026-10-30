@@ -18,7 +18,18 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.11.1
+      - name: Preparar clave de firma
+        env:
+          SIGNING_KEYSTORE: ${{ secrets.SIGNING_KEYSTORE }}
+        run: |
+          if [ -n "$SIGNING_KEYSTORE" ]; then
+            echo "$SIGNING_KEYSTORE" | base64 -d > app/release.jks
+          else
+            echo "::warning::Sin secreto SIGNING_KEYSTORE: el APK se firma con una clave temporal y no se podrá actualizar encima de otra versión."
+          fi
       - name: Compilar
+        env:
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
         run: gradle :app:assembleRelease --stacktrace
       - name: Renombrar APK
         run: cp app/build/outputs/apk/release/app-release.apk NexoLauncher.apk
