@@ -45,6 +45,8 @@ class SettingsStore(private val context: Context) {
         val byCategory = booleanPreferencesKey("drawer_by_category")
         val categoryOverrides = stringPreferencesKey("category_overrides")
         val lastUsed = stringPreferencesKey("last_used")
+        val kidsApp = stringPreferencesKey("kids_app")
+        val kidsMode = booleanPreferencesKey("kids_mode")
     }
 
     val settings: Flow<LauncherSettings> = context.dataStore.data.map { read(it) }
@@ -85,6 +87,8 @@ class SettingsStore(private val context: Context) {
             lastUsed = p[K.lastUsed]?.let(::decodeMap).orEmpty()
                 .mapNotNull { (k, v) -> (v as? Number)?.let { k to it.toLong() } }
                 .toMap(),
+            kidsApp = p[K.kidsApp],
+            kidsMode = p[K.kidsMode] ?: d.kidsMode,
             loaded = true,
         )
     }
@@ -114,6 +118,8 @@ class SettingsStore(private val context: Context) {
         p[K.byCategory] = s.drawerByCategory
         p[K.categoryOverrides] = JSONObject(s.categoryOverrides.mapValues { it.value.name }).toString()
         p[K.lastUsed] = JSONObject(s.lastUsed).toString()
+        if (s.kidsApp != null) p[K.kidsApp] = s.kidsApp else p.remove(K.kidsApp)
+        p[K.kidsMode] = s.kidsMode
     }
 
     private companion object {

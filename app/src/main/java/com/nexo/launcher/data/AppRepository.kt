@@ -183,7 +183,7 @@ class AppRepository(private val context: Context) {
     }
 
     /**
-     * Apps predeterminadas de teléfono, cámara y mensajes, en ese orden (null si no hay ninguna).
+     * Apps de la barra de inicio: teléfono, WhatsApp, mensajes y cámara, en ese orden (null si falta alguna).
      * Se busca qué app abre cada acción y, dentro de su paquete, la entrada del cajón que le corresponde.
      */
     fun dockApps(apps: List<AppInfo>): List<AppInfo?> {
@@ -206,12 +206,19 @@ class AppRepository(private val context: Context) {
         }
         return listOf(
             find(Intent(Intent.ACTION_DIAL)),
-            find(Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA), Intent(MediaStore.ACTION_IMAGE_CAPTURE)),
+            byPackage(apps, "com.whatsapp", "com.whatsapp.w4b"),
             find(
                 Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_MESSAGING),
                 Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:")),
             ),
+            find(Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA), Intent(MediaStore.ACTION_IMAGE_CAPTURE)),
         )
+    }
+
+    /** Primera app del perfil personal que pertenece a alguno de los paquetes, por orden de preferencia. */
+    fun byPackage(apps: List<AppInfo>, vararg packages: String): AppInfo? {
+        val me = Process.myUserHandle()
+        return packages.firstNotNullOfOrNull { pkg -> apps.firstOrNull { it.packageName == pkg && it.user == me } }
     }
 
     fun launch(app: AppInfo) {

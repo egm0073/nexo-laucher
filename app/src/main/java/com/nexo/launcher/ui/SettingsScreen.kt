@@ -66,6 +66,7 @@ fun SettingsScreen(
     onAddWidget: () -> Unit,
     onNewFolder: () -> Unit,
     onRenameFolder: (Folder) -> Unit,
+    onKidsMode: () -> Unit,
 ) {
     val byKey = remember(apps) { apps.associateBy { it.key } }
     val hiddenApps = remember(byKey, settings.hidden) { settings.hidden.mapNotNull { byKey[it] }.sortedBy { it.label.lowercase() } }
@@ -184,6 +185,11 @@ fun SettingsScreen(
                         TextButton(onClick = { vm.setHidden(app.key, false) }) { Text("Mostrar") }
                     }
                 }
+
+                // ---------- Modo cuentos ----------
+                item { SectionTitle("Modo cuentos") }
+                item { ActionRow("Preparar y empezar el modo cuentos", onKidsMode) }
+                item { HintText("Bloquea el móvil en la app de cuentos con «Fijar aplicación» de Android: la niña no puede salir, llamar ni abrir otras apps hasta que pongas el PIN.") }
 
                 // ---------- Cajón y gestos ----------
                 item { SectionTitle("Cajón y gestos") }

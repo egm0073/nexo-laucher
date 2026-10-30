@@ -58,6 +58,11 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         s.copy(categoryOverrides = if (category == null) s.categoryOverrides - key else s.categoryOverrides + (key to category))
     }
 
+    // --- Modo cuentos ---
+    fun setKidsApp(key: String) = update { it.copy(kidsApp = key) }
+
+    fun setKidsMode(on: Boolean) = update { it.copy(kidsMode = on) }
+
     // --- Carpetas ---
     fun createFolder(name: String, firstApp: String?) = update { s ->
         val folder = Folder(UUID.randomUUID().toString().take(8), name.ifBlank { "Carpeta" }, listOfNotNull(firstApp))
