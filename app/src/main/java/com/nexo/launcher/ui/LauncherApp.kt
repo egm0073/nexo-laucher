@@ -10,13 +10,17 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -26,9 +30,10 @@ import com.nexo.launcher.LauncherViewModel
 import com.nexo.launcher.data.AppInfo
 import com.nexo.launcher.data.Folder
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 interface LauncherActions {
-    fun addWidget(info: AppWidgetProviderInfo)
+    fun addWidget(info: AppWidgetProviderInfo, page: Int)
     fun deleteWidget(id: Int)
     fun expandNotifications()
     fun openDefaultLauncherSettings()
@@ -41,7 +46,8 @@ private sealed interface SheetTarget {
     data class App(val app: AppInfo, val folderId: String?) : SheetTarget
     data class FolderMenu(val folder: Folder) : SheetTarget
     data object HomeMenu : SheetTarget
-    data object WidgetPicker : SheetTarget
+    data object WidgetPageMenu : SheetTarget
+    data class WidgetPicker(val page: Int) : SheetTarget
 }
 
 private sealed interface DialogTarget {
@@ -63,6 +69,9 @@ fun LauncherApp(
     var screen by rememberSaveable { mutableStateOf(Screen.HOME) }
     var sheet by remember { mutableStateOf<SheetTarget?>(null) }
     var dialog by remember { mutableStateOf<DialogTarget?>(null) }
+    var editingWidgets by rememberSaveable { mutableStateOf(false) }
+    val pager = rememberPagerState { 2 }
+    val scope = rememberCoroutineScope()
 
     // Pulsar "Inicio" vuelve siempre a la pantalla principal.
     LaunchedEffect(signal) {
@@ -70,10 +79,15 @@ fun LauncherApp(
             screen = Screen.HOME
             sheet = null
             dialog = null
+            editingWidgets = false
+            pager.animateScrollToPage(0)
         }
     }
 
     BackHandler(enabled = screen != Screen.HOME) { screen = Screen.HOME }
+    BackHandler(enabled = screen == Screen.HOME && !editingWidgets && pager.currentPage != 0) {
+        scope.launch { pager.animateScrollToPage(0) }
+    }
 
     val launch: (AppInfo) -> Unit = { app ->
         vm.repo.launch(app)
@@ -83,18 +97,42 @@ fun LauncherApp(
     LauncherTheme(accent = Color(settings.accent)) {
         Box(Modifier.fillMaxSize()) {
             if (settings.loaded) {
-                HomeScreen(
-                    settings = settings,
-                    apps = apps,
-                    repo = vm.repo,
-                    widgetHost = widgetHost,
-                    onOpenDrawer = { screen = Screen.DRAWER },
-                    onSwipeDown = { actions.expandNotifications() },
-                    onLongPressBackground = { sheet = SheetTarget.HomeMenu },
-                    onLaunch = launch,
-                    onAppLongPress = { app, folderId -> sheet = SheetTarget.App(app, folderId) },
-                    onFolderLongPress = { sheet = SheetTarget.FolderMenu(it) },
-                )
+                // Deslizar a la izquierda en inicio abre la segunda pantalla, la de widgets.
+                HorizontalPager(
+                    state = pager,
+                    userScrollEnabled = !editingWidgets,
+                    beyondViewportPageCount = 1,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = settings.dim)),
+                ) { page ->
+                    if (page == 0) {
+                        HomeScreen(
+                            settings = settings,
+                            apps = apps,
+                            repo = vm.repo,
+                            widgetHost = widgetHost,
+                            onOpenDrawer = { screen = Screen.DRAWER },
+                            onSwipeDown = { actions.expandNotifications() },
+                            onLongPressBackground = { sheet = SheetTarget.HomeMenu },
+                            onLaunch = launch,
+                            onAppLongPress = { app, folderId -> sheet = SheetTarget.App(app, folderId) },
+                            onFolderLongPress = { sheet = SheetTarget.FolderMenu(it) },
+                        )
+                    } else {
+                        WidgetPage(
+                            settings = settings,
+                            widgetHost = widgetHost,
+                            editing = editingWidgets,
+                            onOpenDrawer = { screen = Screen.DRAWER },
+                            onSwipeDown = { actions.expandNotifications() },
+                            onLongPressBackground = { sheet = SheetTarget.WidgetPageMenu },
+                            onPlace = vm::placeWidget,
+                            onDelete = { actions.deleteWidget(it) },
+                            onDoneEditing = { editingWidgets = false },
+                        )
+                    }
+                }
             }
 
             AnimatedVisibility(
@@ -124,7 +162,7 @@ fun LauncherApp(
                     vm = vm,
                     actions = actions,
                     onBack = { screen = Screen.HOME },
-                    onAddWidget = { sheet = SheetTarget.WidgetPicker },
+                    onAddWidget = { sheet = SheetTarget.WidgetPicker(0) },
                     onNewFolder = { dialog = DialogTarget.NewFolder(null) },
                     onRenameFolder = { dialog = DialogTarget.Rename(it) },
                 )
@@ -156,7 +194,7 @@ fun LauncherApp(
 
             SheetTarget.HomeMenu -> HomeMenuSheet(
                 onDismiss = { sheet = null },
-                onAddWidget = { sheet = SheetTarget.WidgetPicker },
+                onAddWidget = { sheet = SheetTarget.WidgetPicker(0) },
                 onNewFolder = {
                     sheet = null
                     dialog = DialogTarget.NewFolder(null)
@@ -171,10 +209,24 @@ fun LauncherApp(
                 },
             )
 
-            SheetTarget.WidgetPicker -> WidgetPickerSheet(
+            SheetTarget.WidgetPageMenu -> WidgetPageMenuSheet(
+                hasWidgets = settings.widgets.any { it.page == 1 },
+                onDismiss = { sheet = null },
+                onAddWidget = { sheet = SheetTarget.WidgetPicker(1) },
+                onEdit = {
+                    sheet = null
+                    editingWidgets = true
+                },
+                onSettings = {
+                    sheet = null
+                    screen = Screen.SETTINGS
+                },
+            )
+
+            is SheetTarget.WidgetPicker -> WidgetPickerSheet(
                 onPick = {
                     sheet = null
-                    actions.addWidget(it)
+                    actions.addWidget(it, t.page)
                 },
                 onDismiss = { sheet = null },
             )

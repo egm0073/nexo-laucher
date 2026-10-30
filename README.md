@@ -10,6 +10,7 @@ Launcher minimalista para Android al estilo Niagara, con más opciones en la pan
 - **Carpetas** que se despliegan en la propia lista de inicio.
 - **Apps ocultas**, que se pueden volver a mostrar desde Ajustes.
 - **Personalización**: color del texto, color de acento, fuente (incluye nueve tipografías finas: Inter, Lato, Manrope, Nunito Sans, Work Sans, Montserrat, Raleway, Jost y Quicksand), tamaño, alineación y oscurecido del fondo.
+- **Segunda pantalla de widgets** (desliza a la izquierda en inicio): coloca los widgets donde quieras y cámbiales el tamaño libremente (mantén pulsado el fondo → *Mover y cambiar tamaño de widgets*).
 - Gestos: deslizar arriba abre las apps, deslizar abajo abre las notificaciones, mantener pulsado el fondo abre el menú.
 
 ## Instalar

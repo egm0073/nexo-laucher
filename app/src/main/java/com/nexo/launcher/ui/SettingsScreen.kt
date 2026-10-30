@@ -138,7 +138,7 @@ fun SettingsScreen(
 
                 // ---------- Widgets ----------
                 item { SectionTitle("Widgets") }
-                if (settings.widgets.isEmpty()) item { HintText("No hay widgets. Añade cualquiera de los widgets de tus apps.") }
+                if (settings.widgets.isEmpty()) item { HintText("No hay widgets. Añade cualquiera de los widgets de tus apps. Desliza a la izquierda en inicio para la pantalla de widgets.") }
                 items(settings.widgets, key = { "w${it.id}" }) { w ->
                     WidgetSettingRow(
                         entry = w,
@@ -332,10 +332,13 @@ private fun WidgetSettingRow(
         AppWidgetManager.getInstance(ctx).getAppWidgetInfo(entry.id)?.loadLabel(ctx.packageManager) ?: "Widget no disponible"
     }
     Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp)) {
-        Text("$label  ·  ${entry.heightDp} dp", style = MaterialTheme.typography.bodyLarge)
+        val where = if (entry.page == 1) "  ·  pantalla 2" else ""
+        Text("$label  ·  ${entry.heightDp} dp$where", style = MaterialTheme.typography.bodyLarge)
         Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-            TextButton(onClick = onUp) { Text("↑ Subir") }
-            TextButton(onClick = onDown) { Text("↓ Bajar") }
+            if (entry.page == 0) {
+                TextButton(onClick = onUp) { Text("↑ Subir") }
+                TextButton(onClick = onDown) { Text("↓ Bajar") }
+            }
             TextButton(onClick = onSmaller) { Text("−") }
             TextButton(onClick = onBigger) { Text("+") }
             TextButton(onClick = onDelete) { Text("Quitar", color = MaterialTheme.colorScheme.error) }

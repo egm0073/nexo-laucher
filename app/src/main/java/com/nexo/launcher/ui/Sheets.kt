@@ -131,6 +131,25 @@ fun HomeMenuSheet(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun WidgetPageMenuSheet(
+    hasWidgets: Boolean,
+    onDismiss: () -> Unit,
+    onAddWidget: () -> Unit,
+    onEdit: () -> Unit,
+    onSettings: () -> Unit,
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
+            SheetHeader("Pantalla de widgets")
+            SheetItem("Añadir widget") { onAddWidget() }
+            if (hasWidgets) SheetItem("Mover y cambiar tamaño de widgets") { onEdit() }
+            SheetItem("Ajustes del launcher") { onSettings() }
+        }
+    }
+}
+
 private data class ProviderGroup(val appLabel: String, val providers: List<Pair<AppWidgetProviderInfo, String>>)
 
 @OptIn(ExperimentalMaterial3Api::class)

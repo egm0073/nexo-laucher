@@ -6,7 +6,6 @@ import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
 import android.os.BatteryManager
 import android.os.Bundle
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -76,11 +75,7 @@ fun HomeScreen(
     val foldersById = remember(settings.folders) { settings.folders.associateBy { it.id } }
     var expandedFolder by rememberSaveable { mutableStateOf<String?>(null) }
 
-    val openDrawer by rememberUpdatedState(onOpenDrawer)
-    val swipeDown by rememberUpdatedState(onSwipeDown)
-    val swipeDownEnabled by rememberUpdatedState(settings.swipeDownNotifications)
-    val longPress by rememberUpdatedState(onLongPressBackground)
-
+    val homeWidgets = settings.widgets.filter { it.page == 0 }
     val itemStyle = settings.homeTextStyle()
     val folderAppStyle = settings.homeTextStyle(scale = 0.78f, alpha = 0.9f)
     val iconSize = settings.iconSizeDp.dp
@@ -89,23 +84,12 @@ fun HomeScreen(
     Box(
         Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = settings.dim))
-            .pointerInput(Unit) {
-                val threshold = 64.dp.toPx()
-                var total = 0f
-                detectVerticalDragGestures(
-                    onDragStart = { total = 0f },
-                    onDragEnd = {
-                        if (total < -threshold) openDrawer()
-                        else if (total > threshold && swipeDownEnabled) swipeDown()
-                    },
-                    onVerticalDrag = { change, dy ->
-                        total += dy
-                        change.consume()
-                    },
-                )
-            }
-            .pointerInput(Unit) { detectTapGestures(onLongPress = { longPress() }) },
+            .homeGestures(
+                onSwipeUp = onOpenDrawer,
+                onSwipeDown = onSwipeDown,
+                swipeDownEnabled = settings.swipeDownNotifications,
+                onLongPress = onLongPressBackground,
+            ),
     ) {
         Column(
             Modifier
@@ -118,11 +102,11 @@ fun HomeScreen(
             if (settings.showClock || settings.showDate) ClockHeader(settings)
             InfoLine(settings)
 
-            if (settings.widgets.isNotEmpty()) {
+            if (homeWidgets.isNotEmpty()) {
                 Spacer(Modifier.height(16.dp))
-                settings.widgets.forEach { entry ->
+                homeWidgets.forEach { entry ->
                     key(entry.id) {
-                        HostedWidget(widgetHost, entry)
+                        HostedWidget(widgetHost, entry, Modifier.fillMaxWidth().height(entry.heightDp.dp))
                         Spacer(Modifier.height(12.dp))
                     }
                 }
@@ -219,6 +203,37 @@ fun HomeScreen(
     }
 }
 
+/** Deslizar arriba/abajo y mantener pulsado el fondo, común a las dos pantallas de inicio. */
+@Composable
+fun Modifier.homeGestures(
+    onSwipeUp: () -> Unit,
+    onSwipeDown: () -> Unit,
+    swipeDownEnabled: Boolean,
+    onLongPress: () -> Unit,
+): Modifier {
+    val swipeUp by rememberUpdatedState(onSwipeUp)
+    val swipeDown by rememberUpdatedState(onSwipeDown)
+    val downEnabled by rememberUpdatedState(swipeDownEnabled)
+    val longPress by rememberUpdatedState(onLongPress)
+    return this
+        .pointerInput(Unit) {
+            val threshold = 64.dp.toPx()
+            var total = 0f
+            detectVerticalDragGestures(
+                onDragStart = { total = 0f },
+                onDragEnd = {
+                    if (total < -threshold) swipeUp()
+                    else if (total > threshold && downEnabled) swipeDown()
+                },
+                onVerticalDrag = { change, dy ->
+                    total += dy
+                    change.consume()
+                },
+            )
+        }
+        .pointerInput(Unit) { detectTapGestures(onLongPress = { longPress() }) }
+}
+
 @Composable
 private fun FolderRow(
     folder: Folder,
@@ -313,18 +328,13 @@ private fun InfoLine(settings: LauncherSettings) {
 }
 
 @Composable
-fun HostedWidget(host: AppWidgetHost, entry: WidgetEntry) {
+fun HostedWidget(host: AppWidgetHost, entry: WidgetEntry, modifier: Modifier = Modifier) {
     val ctx = LocalContext.current
     val density = LocalDensity.current
     val info = remember(entry.id) { AppWidgetManager.getInstance(ctx).getAppWidgetInfo(entry.id) }
     val viewRef = remember { AtomicReference<AppWidgetHostView?>(null) }
 
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(entry.heightDp.dp)
-            .clip(RoundedCornerShape(20.dp)),
-    ) {
+    Box(modifier.clip(RoundedCornerShape(20.dp))) {
         if (info == null) {
             Text(
                 "Widget no disponible",

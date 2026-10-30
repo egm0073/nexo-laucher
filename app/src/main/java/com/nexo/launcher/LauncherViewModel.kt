@@ -67,19 +67,34 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     }
 
     // --- Widgets ---
-    fun addWidget(id: Int, heightDp: Int) = update { s -> s.copy(widgets = s.widgets + WidgetEntry(id, heightDp)) }
+    fun addWidget(id: Int, heightDp: Int, page: Int) = update { s ->
+        // En la segunda pantalla, los widgets nuevos se colocan debajo del último.
+        val y = if (page == 0) 0 else s.widgets.filter { it.page == page }.maxOfOrNull { it.y + it.heightDp + 12 } ?: 0
+        s.copy(widgets = s.widgets + WidgetEntry(id, heightDp, page = page, y = y))
+    }
 
     fun removeWidget(id: Int) = update { s -> s.copy(widgets = s.widgets.filterNot { it.id == id }) }
 
     fun resizeWidget(id: Int, deltaDp: Int) = update { s ->
         s.copy(widgets = s.widgets.map {
-            if (it.id == id) it.copy(heightDp = (it.heightDp + deltaDp).coerceIn(60, 600)) else it
+            if (it.id == id) it.copy(heightDp = (it.heightDp + deltaDp).coerceIn(40, 1200)) else it
         })
     }
 
+    fun placeWidget(id: Int, x: Int, y: Int, widthDp: Int, heightDp: Int) = update { s ->
+        s.copy(widgets = s.widgets.map {
+            if (it.id == id) it.copy(x = x, y = y, widthDp = widthDp, heightDp = heightDp) else it
+        })
+    }
+
+    /** Cambia el orden solo entre los widgets de la misma pantalla. */
     fun moveWidget(id: Int, delta: Int) = update { s ->
-        val entry = s.widgets.firstOrNull { it.id == id }
-        if (entry == null) s else s.copy(widgets = s.widgets.moved(entry, delta))
+        val entry = s.widgets.firstOrNull { it.id == id } ?: return@update s
+        val samePage = s.widgets.filter { it.page == entry.page }
+        val other = samePage.getOrNull(samePage.indexOf(entry) + delta) ?: return@update s
+        val list = s.widgets.toMutableList()
+        Collections.swap(list, list.indexOf(entry), list.indexOf(other))
+        s.copy(widgets = list)
     }
 }
 

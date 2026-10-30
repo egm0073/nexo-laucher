@@ -31,7 +31,18 @@ enum class AlignChoice(val label: String) {
 
 data class Folder(val id: String, val name: String, val apps: List<String>)
 
-data class WidgetEntry(val id: Int, val heightDp: Int)
+/**
+ * page 0: lista bajo el reloj (solo cuenta la altura).
+ * page 1: segunda pantalla, con posición y tamaño libres en dp (widthDp 0 = ancho completo).
+ */
+data class WidgetEntry(
+    val id: Int,
+    val heightDp: Int,
+    val page: Int = 0,
+    val x: Int = 0,
+    val y: Int = 0,
+    val widthDp: Int = 0,
+)
 
 /** Elementos de la pantalla principal: "app:<clave>" o "folder:<id>". */
 object HomeItem {

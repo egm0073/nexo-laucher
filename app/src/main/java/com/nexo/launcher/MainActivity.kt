@@ -25,6 +25,7 @@ class MainActivity : ComponentActivity(), LauncherActions {
     private lateinit var widgetHost: AppWidgetHost
     private lateinit var widgetManager: AppWidgetManager
     private var pendingWidgetId = -1
+    private var pendingWidgetPage = 0
 
     /** Se incrementa cada vez que se pulsa "Inicio" estando ya en el launcher. */
     private val homeSignal = MutableStateFlow(0)
@@ -48,6 +49,7 @@ class MainActivity : ComponentActivity(), LauncherActions {
         widgetManager = AppWidgetManager.getInstance(this)
         widgetHost = AppWidgetHost(applicationContext, WIDGET_HOST_ID)
         pendingWidgetId = savedInstanceState?.getInt(KEY_PENDING, -1) ?: -1
+        pendingWidgetPage = savedInstanceState?.getInt(KEY_PENDING_PAGE, 0) ?: 0
 
         // En la pantalla principal el botón "atrás" no hace nada.
         onBackPressedDispatcher.addCallback(this) { }
@@ -80,13 +82,15 @@ class MainActivity : ComponentActivity(), LauncherActions {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt(KEY_PENDING, pendingWidgetId)
+        outState.putInt(KEY_PENDING_PAGE, pendingWidgetPage)
     }
 
     // ---------- Widgets ----------
 
-    override fun addWidget(info: AppWidgetProviderInfo) {
+    override fun addWidget(info: AppWidgetProviderInfo, page: Int) {
         val id = widgetHost.allocateAppWidgetId()
         pendingWidgetId = id
+        pendingWidgetPage = page
         val allowed = runCatching {
             widgetManager.bindAppWidgetIdIfAllowed(id, info.profile, info.provider, null)
         }.getOrDefault(false)
@@ -123,7 +127,7 @@ class MainActivity : ComponentActivity(), LauncherActions {
     private fun commitWidget(id: Int, info: AppWidgetProviderInfo) {
         val density = resources.displayMetrics.density
         val heightDp = (info.minHeight / density).toInt().coerceIn(80, 420) + 8
-        vm.addWidget(id, heightDp)
+        vm.addWidget(id, heightDp, pendingWidgetPage)
         pendingWidgetId = -1
     }
 
@@ -175,5 +179,6 @@ class MainActivity : ComponentActivity(), LauncherActions {
         private const val WIDGET_HOST_ID = 1024
         private const val REQ_CONFIGURE = 4210
         private const val KEY_PENDING = "pending_widget"
+        private const val KEY_PENDING_PAGE = "pending_widget_page"
     }
 }

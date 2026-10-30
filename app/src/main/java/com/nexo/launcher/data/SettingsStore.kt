@@ -126,7 +126,12 @@ class SettingsStore(private val context: Context) {
 
     private fun encodeWidgets(list: List<WidgetEntry>): String {
         val a = JSONArray()
-        list.forEach { w -> a.put(JSONObject().put("id", w.id).put("h", w.heightDp)) }
+        list.forEach { w ->
+            a.put(
+                JSONObject().put("id", w.id).put("h", w.heightDp)
+                    .put("p", w.page).put("x", w.x).put("y", w.y).put("w", w.widthDp),
+            )
+        }
         return a.toString()
     }
 
@@ -134,7 +139,7 @@ class SettingsStore(private val context: Context) {
         val a = JSONArray(s)
         List(a.length()) { i ->
             val o = a.getJSONObject(i)
-            WidgetEntry(o.getInt("id"), o.getInt("h"))
+            WidgetEntry(o.getInt("id"), o.getInt("h"), o.optInt("p"), o.optInt("x"), o.optInt("y"), o.optInt("w"))
         }
     }.getOrDefault(emptyList())
 }
