@@ -97,7 +97,7 @@ class AppRepository(private val context: Context) {
 
     /** Icono de la app. Con [monochrome] devuelve una silueta (capa monocroma o primer plano). */
     suspend fun icon(key: String, monochrome: Boolean): ImageBitmap? {
-        val cacheKey = if (monochrome) "$key|m" else key
+        val cacheKey = if (monochrome) "$key|m2" else key
         iconCache[cacheKey]?.let { return it }
         return withContext(Dispatchers.IO) {
             val info = infos[key] ?: return@withContext null
@@ -111,21 +111,69 @@ class AppRepository(private val context: Context) {
 
     private fun renderMono(drawable: Drawable, size: Int): Bitmap {
         val d = drawable.mutate()
-        val layer: Drawable? = if (d is AdaptiveIconDrawable) {
-            if (Build.VERSION.SDK_INT >= 33) d.monochrome ?: d.foreground else d.foreground
-        } else null
         val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bmp)
-        if (layer != null) {
-            // Las capas adaptativas miden 108dp con una zona útil de 72dp.
+        val mono = if (Build.VERSION.SDK_INT >= 33 && d is AdaptiveIconDrawable) d.monochrome else null
+        if (mono != null) {
+            // Capa monocroma oficial (Android 13+). Las capas adaptativas miden 108dp con una zona útil de 72dp.
             val pad = size / 4
-            layer.setBounds(-pad, -pad, size + pad, size + pad)
-            layer.draw(canvas)
-        } else {
-            d.setBounds(0, 0, size, size)
-            d.draw(canvas)
+            mono.setBounds(-pad, -pad, size + pad, size + pad)
+            mono.draw(canvas)
+            return bmp
         }
-        return bmp
+        d.setBounds(0, 0, size, size)
+        d.draw(canvas)
+        return extractGlyph(bmp)
+    }
+
+    /**
+     * Sin capa monocroma, la forma del icono suele ser un cuadrado o círculo opaco. Se busca el color
+     * de fondo (el más repetido en el borde) y se deja solo lo que contrasta con él: el dibujo.
+     */
+    private fun extractGlyph(src: Bitmap): Bitmap {
+        val w = src.width
+        val h = src.height
+        val px = IntArray(w * h)
+        src.getPixels(px, 0, w, 0, 0, w, h)
+
+        val band = (minOf(w, h) * 0.2f).toInt()
+        val counts = HashMap<Int, Int>()
+        for (y in 0 until h) for (x in 0 until w) {
+            if (minOf(x, y, w - 1 - x, h - 1 - y) >= band) continue
+            val c = px[y * w + x]
+            if ((c ushr 24) < 200) continue
+            // Colores agrupados a 5 bits por canal para tolerar degradados suaves.
+            val q = ((c shr 19) and 0x1F shl 10) or ((c shr 11) and 0x1F shl 5) or ((c shr 3) and 0x1F)
+            counts[q] = (counts[q] ?: 0) + 1
+        }
+        val bgKey = counts.maxByOrNull { it.value }?.key ?: return src
+        val bgR = (bgKey shr 10 and 0x1F) * 8 + 4
+        val bgG = (bgKey shr 5 and 0x1F) * 8 + 4
+        val bgB = (bgKey and 0x1F) * 8 + 4
+
+        val out = IntArray(w * h)
+        var glyph = 0
+        var opaque = 0
+        for (i in px.indices) {
+            val c = px[i]
+            val a = c ushr 24
+            if (a < 32) continue
+            opaque++
+            val dr = (c shr 16 and 0xFF) - bgR
+            val dg = (c shr 8 and 0xFF) - bgG
+            val db = (c and 0xFF) - bgB
+            val dist = kotlin.math.sqrt((dr * dr + dg * dg + db * db).toFloat())
+            // Borde suave entre 40 y 90 de distancia de color.
+            val k = ((dist - 40f) / 50f).coerceIn(0f, 1f)
+            val alpha = (k * a).toInt()
+            if (alpha > 0) {
+                out[i] = alpha shl 24 // negro con transparencia; el color final lo pone el tinte
+                if (alpha > 128) glyph++
+            }
+        }
+        // Si casi no hay contraste (icono de un solo color) se usa la forma completa.
+        if (opaque == 0 || glyph < opaque * 0.02f) return src
+        return Bitmap.createBitmap(out, w, h, Bitmap.Config.ARGB_8888)
     }
 
     fun launch(app: AppInfo) {
