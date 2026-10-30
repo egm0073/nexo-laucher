@@ -58,6 +58,13 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         s.copy(categoryOverrides = if (category == null) s.categoryOverrides - key else s.categoryOverrides + (key to category))
     }
 
+    // --- Modo cuentos ---
+    fun setKidsApp(key: String) = update { it.copy(kidsApp = key) }
+
+    fun startKidsMode(prevFilter: Int) = update { it.copy(kidsMode = true, kidsPrevFilter = prevFilter) }
+
+    fun endKidsMode() = update { it.copy(kidsMode = false, kidsPrevFilter = -1) }
+
     // --- Carpetas ---
     fun createFolder(name: String, firstApp: String?) = update { s ->
         val folder = Folder(UUID.randomUUID().toString().take(8), name.ifBlank { "Carpeta" }, listOfNotNull(firstApp))

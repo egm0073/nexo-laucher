@@ -103,6 +103,9 @@ fun HomeScreen(
     onDeleteWidget: (Int) -> Unit,
 ) {
     val byKey = remember(apps) { apps.associateBy { it.key } }
+    // YouTube y YouTube Music están siempre al principio de la lista y no se pueden quitar.
+    val fixedApps = remember(apps) { FIXED_HOME_PACKAGES.mapNotNull { repo.byPackage(apps, it) } }
+    val fixedKeys = remember(fixedApps) { fixedApps.map { "app:${it.key}" }.toSet() }
     val foldersById = remember(settings.folders) { settings.folders.associateBy { it.id } }
     var expandedFolder by rememberSaveable { mutableStateOf<String?>(null) }
 
@@ -166,14 +169,29 @@ fun HomeScreen(
                     Modifier.verticalScroll(scroll, enabled = scroll.maxValue > 0),
                     horizontalAlignment = settings.align.horizontal(),
                 ) {
-                    if (settings.homeItems.isEmpty()) {
+                    fixedApps.forEach { app ->
+                        key("fixed:${app.key}") {
+                            AppRow(
+                                app = app,
+                                repo = repo,
+                                iconStyle = settings.homeIconStyle,
+                                iconTint = settings.silhouetteTint(),
+                                iconSize = iconSize,
+                                textStyle = itemStyle,
+                                align = settings.align,
+                                onClick = { onLaunch(app) },
+                                onLongClick = { onAppLongPress(app, null) },
+                            )
+                        }
+                    }
+                    if (settings.homeItems.isEmpty() && fixedApps.isEmpty()) {
                         Text(
                             "Desliza hacia arriba para ver tus apps y mantén pulsada una para añadirla aquí.",
                             style = settings.homeTextStyle(scale = 0.6f, alpha = 0.8f),
                             modifier = Modifier.padding(bottom = 16.dp),
                         )
                     }
-                    settings.homeItems.forEach { item ->
+                    settings.homeItems.filterNot { it in fixedKeys }.forEach { item ->
                         key(item) {
                             if (item.startsWith("app:")) {
                                 val app = byKey[item.removePrefix("app:")]
@@ -258,12 +276,14 @@ fun HomeScreen(
     }
 }
 
+private val FIXED_HOME_PACKAGES = listOf("com.google.android.youtube", "com.google.android.apps.youtube.music")
+
 private val DOCK_ICON_SIZE = 40.dp
 
 /** Siluetas negras semitransparentes, para que la barra se funda con el fondo y no llame la atención. */
 private val DOCK_TINT = Color.Black.copy(alpha = 0.7f)
 
-/** Teléfono, cámara y mensajes como siluetas, siempre al pie de la pantalla de inicio. */
+/** Teléfono, WhatsApp, mensajes y cámara como siluetas, siempre al pie de la pantalla de inicio. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun Dock(

@@ -28,7 +28,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.nexo.launcher.KidsLock
 import com.nexo.launcher.LauncherViewModel
 import com.nexo.launcher.data.AppInfo
 import com.nexo.launcher.data.Folder
@@ -51,11 +53,13 @@ private sealed interface SheetTarget {
     data object HomeMenu : SheetTarget
     data object WidgetPageMenu : SheetTarget
     data class WidgetPicker(val page: Int) : SheetTarget
+    data object KidsAppPicker : SheetTarget
 }
 
 private sealed interface DialogTarget {
     data class NewFolder(val appKey: String?) : DialogTarget
     data class Rename(val folder: Folder) : DialogTarget
+    data object KidsMode : DialogTarget
 }
 
 @Composable
@@ -75,6 +79,9 @@ fun LauncherApp(
     var editingWidgets by rememberSaveable { mutableStateOf(false) }
     val pager = rememberPagerState { 2 }
     val scope = rememberCoroutineScope()
+    val ctx = LocalContext.current
+    val kidsLock = remember { KidsLock(ctx.applicationContext) }
+    val kidsApp = remember(apps, settings.kidsApp) { apps.firstOrNull { it.key == settings.kidsApp } }
 
     // Pulsar "Inicio" vuelve siempre a la pantalla principal.
     LaunchedEffect(signal) {
@@ -191,6 +198,7 @@ fun LauncherApp(
                         onAddWidget = { sheet = SheetTarget.WidgetPicker(0) },
                         onNewFolder = { dialog = DialogTarget.NewFolder(null) },
                         onRenameFolder = { dialog = DialogTarget.Rename(it) },
+                        onKidsMode = { dialog = DialogTarget.KidsMode },
                     )
                 }
             }
@@ -229,6 +237,10 @@ fun LauncherApp(
                         sheet = null
                         actions.openWallpaperPicker()
                     },
+                    onKidsMode = {
+                        sheet = null
+                        dialog = DialogTarget.KidsMode
+                    },
                     onSettings = {
                         sheet = null
                         screen = Screen.SETTINGS
@@ -247,6 +259,15 @@ fun LauncherApp(
                         sheet = null
                         screen = Screen.SETTINGS
                     },
+                )
+
+                SheetTarget.KidsAppPicker -> KidsAppPickerSheet(
+                    apps = apps.filter { it.key !in settings.hidden },
+                    onPick = {
+                        vm.setKidsApp(it.key)
+                        sheet = null
+                    },
+                    onDismiss = { sheet = null },
                 )
 
                 is SheetTarget.WidgetPicker -> WidgetPickerSheet(
@@ -271,6 +292,22 @@ fun LauncherApp(
                     onDismiss = { dialog = null },
                 )
 
+                DialogTarget.KidsMode -> KidsModeDialog(
+                    kidsApp = kidsApp,
+                    lock = kidsLock,
+                    onPickApp = { sheet = SheetTarget.KidsAppPicker },
+                    onStart = {
+                        val app = kidsApp
+                        if (app != null) {
+                            vm.startKidsMode(kidsLock.silenceCalls())
+                            dialog = null
+                            screen = Screen.HOME
+                            vm.repo.launch(app)
+                        }
+                    },
+                    onDismiss = { dialog = null },
+                )
+
                 is DialogTarget.Rename -> NameDialog(
                     title = "Renombrar carpeta",
                     initial = d.folder.name,
@@ -282,6 +319,19 @@ fun LauncherApp(
                 )
 
                 null -> Unit
+            }
+
+            // Mientras dura el modo cuentos el launcher queda tapado: solo se puede volver a los cuentos.
+            if (settings.kidsMode) {
+                BackHandler { }
+                KidsModeOverlay(
+                    kidsApp = kidsApp,
+                    onBack = { kidsApp?.let { vm.repo.launch(it) } },
+                    onEnd = {
+                        kidsLock.restore(settings.kidsPrevFilter)
+                        vm.endKidsMode()
+                    },
+                )
             }
         }
     }

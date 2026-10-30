@@ -80,6 +80,10 @@ data class LauncherSettings(
     val categoryOverrides: Map<String, AppCategory> = emptyMap(),
     /** Última vez que se abrió cada app desde el launcher: clave → milisegundos. */
     val lastUsed: Map<String, Long> = emptyMap(),
+    /** Modo cuentos: app elegida (clave), si está activo y el modo No molestar que había antes (-1 = ninguno). */
+    val kidsApp: String? = null,
+    val kidsMode: Boolean = false,
+    val kidsPrevFilter: Int = -1,
     val homeItems: List<String> = emptyList(),
     val hidden: Set<String> = emptySet(),
     val folders: List<Folder> = emptyList(),

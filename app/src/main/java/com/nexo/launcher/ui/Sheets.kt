@@ -133,11 +133,13 @@ fun HomeMenuSheet(
     onAddWidget: () -> Unit,
     onNewFolder: () -> Unit,
     onWallpaper: () -> Unit,
+    onKidsMode: () -> Unit,
     onSettings: () -> Unit,
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
             SheetHeader("Pantalla principal")
+            SheetItem("Modo cuentos") { onKidsMode() }
             SheetItem("Añadir widget") { onAddWidget() }
             SheetItem("Nueva carpeta") { onNewFolder() }
             SheetItem("Cambiar fondo de pantalla") { onWallpaper() }
