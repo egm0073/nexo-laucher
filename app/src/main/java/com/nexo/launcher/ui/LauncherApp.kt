@@ -4,6 +4,7 @@ import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetProviderInfo
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -26,6 +27,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.nexo.launcher.LauncherViewModel
 import com.nexo.launcher.data.AppInfo
@@ -106,6 +108,7 @@ fun LauncherApp(
     }
 
     val widgetAreas = remember { WidgetAreas() }
+    val homeAlpha by animateFloatAsState(if (screen == Screen.HOME) 1f else 0f, label = "homeAlpha")
 
     LauncherTheme(accent = Color(settings.accent)) {
         CompositionLocalProvider(LocalWidgetAreas provides widgetAreas) {
@@ -118,6 +121,8 @@ fun LauncherApp(
                         beyondViewportPageCount = 1,
                         modifier = Modifier
                             .fillMaxSize()
+                            // El cajón es transparente: la pantalla de inicio se oculta mientras está abierto.
+                            .graphicsLayer { alpha = homeAlpha }
                             .background(Color.Black.copy(alpha = settings.dim)),
                     ) { page ->
                         if (page == 0) {

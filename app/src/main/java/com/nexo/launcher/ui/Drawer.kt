@@ -154,8 +154,10 @@ fun AppDrawer(
         }
     }
 
+    // El cajón es transparente sobre el fondo de pantalla: usa los mismos colores que la pantalla de inicio.
+    val fg = settings.foreground()
     val itemStyle = TextStyle(
-        color = Color.White,
+        color = fg,
         fontSize = (settings.textSizeSp * 0.75f).sp,
         fontFamily = settings.font.family(),
     )
@@ -164,7 +166,7 @@ fun AppDrawer(
     Box(
         Modifier
             .fillMaxSize()
-            .background(Color(0xF00C0C10)),
+            .background(Color.Black.copy(alpha = settings.dim)),
     ) {
         Column(
             Modifier
@@ -198,8 +200,17 @@ fun AppDrawer(
                     colors = TextFieldDefaults.colors(
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
-                        focusedContainerColor = Color.White.copy(alpha = 0.09f),
-                        unfocusedContainerColor = Color.White.copy(alpha = 0.09f),
+                        focusedContainerColor = fg.copy(alpha = 0.09f),
+                        unfocusedContainerColor = fg.copy(alpha = 0.09f),
+                        focusedTextColor = fg,
+                        unfocusedTextColor = fg,
+                        focusedPlaceholderColor = fg.copy(alpha = 0.6f),
+                        unfocusedPlaceholderColor = fg.copy(alpha = 0.6f),
+                        focusedLeadingIconColor = fg.copy(alpha = 0.8f),
+                        unfocusedLeadingIconColor = fg.copy(alpha = 0.8f),
+                        focusedTrailingIconColor = fg.copy(alpha = 0.8f),
+                        unfocusedTrailingIconColor = fg.copy(alpha = 0.8f),
+                        cursorColor = fg,
                     ),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
                     keyboardActions = KeyboardActions(onGo = {
@@ -215,7 +226,7 @@ fun AppDrawer(
                     keyboard?.hide()
                     onOpenSettings()
                 }) {
-                    Icon(Icons.Filled.Settings, contentDescription = "Ajustes", tint = Color.White)
+                    Icon(Icons.Filled.Settings, contentDescription = "Ajustes", tint = fg)
                 }
             }
 
@@ -248,6 +259,7 @@ fun AppDrawer(
                                 app = row.app,
                                 repo = repo,
                                 iconStyle = settings.drawerIconStyle,
+                                iconTint = settings.silhouetteTint(),
                                 iconSize = settings.iconSizeDp.dp,
                                 textStyle = itemStyle,
                                 align = AlignChoice.START,
@@ -279,6 +291,7 @@ fun AppDrawer(
                     FastScroller(
                         letters = letterIndex.keys.toList(),
                         accent = accent,
+                        color = fg,
                         onLetter = { letter ->
                             letterIndex[letter]?.let { idx -> scope.launch { listState.scrollToItem(idx) } }
                         },
@@ -297,6 +310,7 @@ fun AppDrawer(
 private fun FastScroller(
     letters: List<Char>,
     accent: Color,
+    color: Color,
     onLetter: (Char) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -343,7 +357,7 @@ private fun FastScroller(
         letters.forEach { l ->
             Text(
                 l.toString(),
-                color = if (l == active) accent else Color.White.copy(alpha = 0.55f),
+                color = if (l == active) accent else color.copy(alpha = 0.55f),
                 fontSize = if (l == active) 15.sp else 11.sp,
                 fontWeight = if (l == active) FontWeight.Bold else FontWeight.Normal,
             )

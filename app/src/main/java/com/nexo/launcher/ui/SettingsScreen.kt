@@ -132,7 +132,7 @@ fun SettingsScreen(
                         vm.update { it.copy(silhouetteColor = v) }
                     }
                 }
-                item { HintText("«Grises» quita el color al icono; «Silueta» usa la forma monocroma del icono con el color elegido (en la pantalla principal; en el cajón, que es oscuro, se ven en blanco).") }
+                item { HintText("«Grises» quita el color al icono; «Silueta» usa la forma monocroma del icono con el color elegido. El cajón de apps es transparente y usa los mismos colores que la pantalla principal.") }
 
                 // ---------- Pantalla principal ----------
                 item { SectionTitle("Pantalla principal") }
