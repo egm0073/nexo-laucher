@@ -103,7 +103,7 @@ class AppRepository(private val context: Context) {
 
     /** Icono de la app. Con [monochrome] devuelve una silueta (capa monocroma o primer plano). */
     suspend fun icon(key: String, monochrome: Boolean): ImageBitmap? {
-        val cacheKey = if (monochrome) "$key|m2" else key
+        val cacheKey = if (monochrome) "$key|m3" else key
         iconCache[cacheKey]?.let { return it }
         return withContext(Dispatchers.IO) {
             val info = infos[key] ?: return@withContext null
@@ -157,6 +157,9 @@ class AppRepository(private val context: Context) {
         val bgG = (bgKey shr 5 and 0x1F) * 8 + 4
         val bgB = (bgKey and 0x1F) * 8 + 4
 
+        // El borde de la forma (antialias o sombra) no es dibujo: se descartan los píxeles a menos de
+        // EDGE_PX de una zona transparente, que si no dejan un contorno tenue alrededor de la silueta.
+        fun solid(x: Int, y: Int) = x in 0 until w && y in 0 until h && (px[y * w + x] ushr 24) >= 128
         val out = IntArray(w * h)
         var glyph = 0
         var opaque = 0
@@ -165,6 +168,9 @@ class AppRepository(private val context: Context) {
             val a = c ushr 24
             if (a < 32) continue
             opaque++
+            val x = i % w
+            val y = i / w
+            if (a < 250 || !solid(x - EDGE_PX, y) || !solid(x + EDGE_PX, y) || !solid(x, y - EDGE_PX) || !solid(x, y + EDGE_PX)) continue
             val dr = (c shr 16 and 0xFF) - bgR
             val dg = (c shr 8 and 0xFF) - bgG
             val db = (c and 0xFF) - bgB
@@ -240,5 +246,6 @@ class AppRepository(private val context: Context) {
 
     companion object {
         const val ICON_PX = 144
+        private const val EDGE_PX = 3
     }
 }
