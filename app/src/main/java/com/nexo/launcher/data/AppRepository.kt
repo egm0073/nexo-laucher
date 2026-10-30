@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.LauncherActivityInfo
 import android.content.pm.LauncherApps
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.AdaptiveIconDrawable
@@ -16,6 +17,7 @@ import android.os.Looper
 import android.os.Process
 import android.os.UserHandle
 import android.os.UserManager
+import android.provider.MediaStore
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.drawable.toBitmap
@@ -178,6 +180,38 @@ class AppRepository(private val context: Context) {
         // Si casi no hay contraste (icono de un solo color) se usa la forma completa.
         if (opaque == 0 || glyph < opaque * 0.02f) return src
         return Bitmap.createBitmap(out, w, h, Bitmap.Config.ARGB_8888)
+    }
+
+    /**
+     * Apps predeterminadas de teléfono, cámara y mensajes, en ese orden (null si no hay ninguna).
+     * Se busca qué app abre cada acción y, dentro de su paquete, la entrada del cajón que le corresponde.
+     */
+    fun dockApps(apps: List<AppInfo>): List<AppInfo?> {
+        val pm = context.packageManager
+        val me = Process.myUserHandle()
+        fun find(vararg intents: Intent): AppInfo? {
+            for (intent in intents) {
+                val activity = runCatching { pm.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) }
+                    .getOrNull()?.activityInfo ?: continue
+                // "android" es el selector del sistema: hay varias apps y ninguna es la predeterminada.
+                if (activity.packageName == "android") continue
+                val inPackage = apps.filter { it.packageName == activity.packageName && it.user == me }
+                // Algunos paquetes tienen varias entradas (Teléfono y Contactos en Samsung).
+                val app = inPackage.firstOrNull { it.component.className == activity.name }
+                    ?: inPackage.firstOrNull { !it.label.lowercase().startsWith("contact") }
+                    ?: inPackage.firstOrNull()
+                if (app != null) return app
+            }
+            return null
+        }
+        return listOf(
+            find(Intent(Intent.ACTION_DIAL)),
+            find(Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA), Intent(MediaStore.ACTION_IMAGE_CAPTURE)),
+            find(
+                Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_MESSAGING),
+                Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:")),
+            ),
+        )
     }
 
     fun launch(app: AppInfo) {

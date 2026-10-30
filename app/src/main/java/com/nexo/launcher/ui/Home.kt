@@ -6,7 +6,10 @@ import android.appwidget.AppWidgetHostView
 import android.appwidget.AppWidgetManager
 import android.os.BatteryManager
 import android.os.Bundle
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -59,6 +62,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -66,6 +72,7 @@ import com.nexo.launcher.LongPressWidgetView
 import com.nexo.launcher.data.AppInfo
 import com.nexo.launcher.data.AppRepository
 import com.nexo.launcher.data.Folder
+import com.nexo.launcher.data.IconStyle
 import com.nexo.launcher.data.LauncherSettings
 import com.nexo.launcher.data.WidgetEntry
 import kotlinx.coroutines.delay
@@ -226,6 +233,14 @@ fun HomeScreen(
                 }
             }
 
+            Dock(
+                apps = remember(apps) { repo.dockApps(apps) },
+                settings = settings,
+                repo = repo,
+                onLaunch = onLaunch,
+                onLongPress = { onAppLongPress(it, null) },
+            )
+
             Text(
                 "︿",
                 style = settings.homeTextStyle(scale = 0.7f, alpha = 0.5f),
@@ -240,6 +255,54 @@ fun HomeScreen(
         }
 
         if (editingWidgets) EditWidgetsBar("Tira de la esquina para cambiar el ancho y el alto", onDoneEditing)
+    }
+}
+
+private val DOCK_LABELS = listOf("Teléfono", "Cámara", "Mensajes")
+
+/** Teléfono, cámara y mensajes, siempre al pie de la pantalla de inicio. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun Dock(
+    apps: List<AppInfo?>,
+    settings: LauncherSettings,
+    repo: AppRepository,
+    onLaunch: (AppInfo) -> Unit,
+    onLongPress: (AppInfo) -> Unit,
+) {
+    if (apps.all { it == null }) return
+    val haptic = LocalHapticFeedback.current
+    val withIcons = settings.homeIconStyle != IconStyle.NONE
+    val labelStyle = settings.homeTextStyle(scale = if (withIcons) 0.45f else 0.6f).copy(textAlign = TextAlign.Center)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+    ) {
+        apps.forEachIndexed { i, app ->
+            if (app == null) return@forEachIndexed
+            Column(
+                Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .combinedClickable(
+                        onClick = { onLaunch(app) },
+                        onLongClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onLongPress(app)
+                        },
+                    )
+                    .padding(vertical = 10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                if (withIcons) {
+                    AppIcon(app, repo, settings.homeIconStyle, settings.iconSizeDp.dp * 1.2f, settings.silhouetteTint())
+                    Spacer(Modifier.height(4.dp))
+                }
+                Text(DOCK_LABELS[i], style = labelStyle, maxLines = 1)
+            }
+        }
     }
 }
 
