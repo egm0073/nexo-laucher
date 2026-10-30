@@ -65,7 +65,7 @@ data class LauncherSettings(
     val textSizeSp: Int = 26,
     val font: FontChoice = FontChoice.SANS,
     val align: AlignChoice = AlignChoice.START,
-    val accent: Long = 0xFFB9B2FF,
+    val accent: Long = 0xFF000000,
     val lightText: Boolean = true,
     val dim: Float = 0.25f,
     val showClock: Boolean = true,
@@ -75,6 +75,11 @@ data class LauncherSettings(
     val showNextAlarm: Boolean = true,
     val swipeDownNotifications: Boolean = true,
     val drawerAutoKeyboard: Boolean = false,
+    val drawerByCategory: Boolean = true,
+    /** Categoría elegida a mano: clave de app → [AppCategory]. */
+    val categoryOverrides: Map<String, AppCategory> = emptyMap(),
+    /** Última vez que se abrió cada app desde el launcher: clave → milisegundos. */
+    val lastUsed: Map<String, Long> = emptyMap(),
     val homeItems: List<String> = emptyList(),
     val hidden: Set<String> = emptySet(),
     val folders: List<Folder> = emptyList(),

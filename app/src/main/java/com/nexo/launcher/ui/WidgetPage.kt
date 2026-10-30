@@ -128,7 +128,7 @@ fun BoxScope.ResizeHandle(key: Any, onDrag: (dx: Float, dy: Float) -> Unit, onDr
             .align(Alignment.BottomEnd)
             .size(40.dp)
             .clip(RoundedCornerShape(topStart = 20.dp, bottomEnd = 20.dp))
-            .background(MaterialTheme.colorScheme.primary)
+            .background(LocalAccent.current)
             .pointerInput(key) {
                 detectDragGestures(onDragEnd = onDragEnd) { change, d ->
                     change.consume()
@@ -137,7 +137,7 @@ fun BoxScope.ResizeHandle(key: Any, onDrag: (dx: Float, dy: Float) -> Unit, onDr
             },
         contentAlignment = Alignment.Center,
     ) {
-        Text("⤡", color = Color.Black, fontSize = 20.sp)
+        Text("⤡", color = LocalAccent.current.onAccent(), fontSize = 20.sp)
     }
 }
 
@@ -177,7 +177,7 @@ private fun PlacedWidget(
     var x by remember(entry, areaW) { mutableFloatStateOf(entry.x.toFloat().coerceIn(0f, areaW - w)) }
     var y by remember(entry, areaH) { mutableFloatStateOf(entry.y.toFloat().coerceIn(0f, areaH - h)) }
     val commit = { onPlace(entry.id, x.roundToInt(), y.roundToInt(), w.roundToInt(), h.roundToInt()) }
-    val accent = MaterialTheme.colorScheme.primary
+    val accent = LocalAccent.current
     val shape = RoundedCornerShape(20.dp)
 
     Box(Modifier.offset(x.dp, y.dp).size(w.dp, h.dp)) {

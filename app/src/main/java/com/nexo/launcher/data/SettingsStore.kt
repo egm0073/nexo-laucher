@@ -42,6 +42,9 @@ class SettingsStore(private val context: Context) {
         val hidden = stringSetPreferencesKey("hidden")
         val folders = stringPreferencesKey("folders")
         val widgets = stringPreferencesKey("widgets")
+        val byCategory = booleanPreferencesKey("drawer_by_category")
+        val categoryOverrides = stringPreferencesKey("category_overrides")
+        val lastUsed = stringPreferencesKey("last_used")
     }
 
     val settings: Flow<LauncherSettings> = context.dataStore.data.map { read(it) }
@@ -60,7 +63,8 @@ class SettingsStore(private val context: Context) {
             textSizeSp = p[K.textSize] ?: d.textSizeSp,
             font = enumOr(p[K.font], d.font),
             align = enumOr(p[K.align], d.align),
-            accent = p[K.accent] ?: d.accent,
+            // Quien nunca cambió el acento tiene guardado el lila anterior: pasa al nuevo predeterminado, el negro.
+            accent = p[K.accent]?.takeIf { it != OLD_DEFAULT_ACCENT } ?: d.accent,
             lightText = p[K.lightText] ?: d.lightText,
             dim = p[K.dim] ?: d.dim,
             showClock = p[K.showClock] ?: d.showClock,
@@ -74,6 +78,13 @@ class SettingsStore(private val context: Context) {
             hidden = p[K.hidden] ?: emptySet(),
             folders = p[K.folders]?.let(::decodeFolders) ?: emptyList(),
             widgets = p[K.widgets]?.let(::decodeWidgets) ?: emptyList(),
+            drawerByCategory = p[K.byCategory] ?: d.drawerByCategory,
+            categoryOverrides = p[K.categoryOverrides]?.let(::decodeMap).orEmpty()
+                .mapNotNull { (k, v) -> runCatching { k to enumValueOf<AppCategory>(v.toString()) }.getOrNull() }
+                .toMap(),
+            lastUsed = p[K.lastUsed]?.let(::decodeMap).orEmpty()
+                .mapNotNull { (k, v) -> (v as? Number)?.let { k to it.toLong() } }
+                .toMap(),
             loaded = true,
         )
     }
@@ -100,6 +111,13 @@ class SettingsStore(private val context: Context) {
         p[K.hidden] = s.hidden
         p[K.folders] = encodeFolders(s.folders)
         p[K.widgets] = encodeWidgets(s.widgets)
+        p[K.byCategory] = s.drawerByCategory
+        p[K.categoryOverrides] = JSONObject(s.categoryOverrides.mapValues { it.value.name }).toString()
+        p[K.lastUsed] = JSONObject(s.lastUsed).toString()
+    }
+
+    private companion object {
+        const val OLD_DEFAULT_ACCENT = 0xFFB9B2FF
     }
 
     private inline fun <reified T : Enum<T>> enumOr(name: String?, default: T): T =
@@ -109,6 +127,11 @@ class SettingsStore(private val context: Context) {
         val a = JSONArray(s)
         List(a.length()) { a.getString(it) }
     }.getOrDefault(emptyList())
+
+    private fun decodeMap(s: String): Map<String, Any> = runCatching {
+        val o = JSONObject(s)
+        o.keys().asSequence().associateWith { o.get(it) }
+    }.getOrDefault(emptyMap())
 
     private fun encodeFolders(list: List<Folder>): String {
         val a = JSONArray()

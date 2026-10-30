@@ -104,6 +104,7 @@ fun LauncherApp(
 
     val launch: (AppInfo) -> Unit = { app ->
         vm.repo.launch(app)
+        vm.recordLaunch(app.key)
         screen = Screen.HOME
     }
 

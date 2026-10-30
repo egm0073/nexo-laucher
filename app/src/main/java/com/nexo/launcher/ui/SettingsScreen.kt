@@ -187,6 +187,10 @@ fun SettingsScreen(
 
                 // ---------- Cajón y gestos ----------
                 item { SectionTitle("Cajón y gestos") }
+                item { SwitchRow("Organizar por categorías", settings.drawerByCategory) { v -> vm.update { it.copy(drawerByCategory = v) } } }
+                if (settings.drawerByCategory) {
+                    item { HintText("Arriba se muestran las 10 últimas apps usadas; las categorías están plegadas y se despliegan al tocarlas. Mantén pulsada una app y elige «Cambiar categoría…» si está mal clasificada.") }
+                }
                 item { SwitchRow("Abrir el teclado al abrir el cajón", settings.drawerAutoKeyboard) { v -> vm.update { it.copy(drawerAutoKeyboard = v) } } }
                 item { SwitchRow("Deslizar abajo abre notificaciones", settings.swipeDownNotifications) { v -> vm.update { it.copy(swipeDownNotifications = v) } } }
                 item { HintText("Deslizar arriba: todas las apps · Mantener pulsado el fondo: menú · Tocar la hora: alarmas · Tocar la fecha: calendario") }
@@ -316,7 +320,8 @@ private fun AccentRow(selected: Long, onSelect: (Long) -> Unit) {
                         .size(36.dp)
                         .clip(CircleShape)
                         .background(Color(c))
-                        .border(if (isSel) 3.dp else 0.dp, Color.White, CircleShape)
+                        // Borde fino siempre, para que el negro se distinga del fondo oscuro.
+                        .border(if (isSel) 3.dp else 1.dp, if (isSel) Color.White else Color.White.copy(alpha = 0.3f), CircleShape)
                         .clickable { onSelect(c) },
                 )
             }

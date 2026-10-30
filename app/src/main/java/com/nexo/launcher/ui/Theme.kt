@@ -3,10 +3,13 @@ package com.nexo.launcher.ui
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -20,7 +23,7 @@ import com.nexo.launcher.data.LauncherSettings
 import com.nexo.launcher.data.SilhouetteColor
 
 val AccentPalette: List<Long> = listOf(
-    0xFFB9B2FF, 0xFF8AB4F8, 0xFF78D9EC, 0xFF81C995,
+    0xFF000000, 0xFFB9B2FF, 0xFF8AB4F8, 0xFF78D9EC, 0xFF81C995,
     0xFFFDD663, 0xFFFCAD70, 0xFFF28B82, 0xFFFF8BCB,
     0xFFFFFFFF,
 )
@@ -101,13 +104,26 @@ fun LauncherSettings.homeTextStyle(
     shadow = if (lightText) Shadow(Color.Black.copy(alpha = 0.45f), Offset(0f, 2f), 8f) else null,
 )
 
+/**
+ * Color de acento tal cual lo eligió el usuario, para lo que se dibuja sobre el fondo de pantalla
+ * (cajón, inicio, widgets). Ajustes y menús usan MaterialTheme, que lo aclara si es muy oscuro.
+ */
+val LocalAccent = staticCompositionLocalOf { Color(0xFFB9B2FF) }
+
+private fun Color.isDark() = luminance() < 0.15f
+
+/** Color legible encima del acento (texto o símbolos sobre un fondo de color de acento). */
+fun Color.onAccent(): Color = if (isDark()) Color.White else Color.Black
+
 @Composable
 fun LauncherTheme(accent: Color, content: @Composable () -> Unit) {
+    // Ajustes y menús tienen fondo oscuro: un acento negro no se vería, así que ahí se usa blanco.
+    val ui = if (accent.isDark()) Color.White else accent
     val scheme = darkColorScheme(
-        primary = accent,
+        primary = ui,
         onPrimary = Color.Black,
-        secondary = accent,
-        secondaryContainer = accent.copy(alpha = 0.28f),
+        secondary = ui,
+        secondaryContainer = ui.copy(alpha = 0.28f),
         onSecondaryContainer = Color.White,
         background = Color(0xFF101014),
         surface = Color(0xFF16161B),
@@ -115,5 +131,7 @@ fun LauncherTheme(accent: Color, content: @Composable () -> Unit) {
         surfaceContainer = Color(0xFF202027),
         surfaceContainerHigh = Color(0xFF26262E),
     )
-    MaterialTheme(colorScheme = scheme, content = content)
+    CompositionLocalProvider(LocalAccent provides accent) {
+        MaterialTheme(colorScheme = scheme, content = content)
+    }
 }

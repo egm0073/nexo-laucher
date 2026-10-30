@@ -11,7 +11,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableFloatStateOf
 import kotlin.math.roundToInt
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -259,7 +258,7 @@ private fun HomeWidget(
         mutableFloatStateOf(if (entry.widthDp > 0) entry.widthDp.toFloat().coerceIn(MIN_WIDGET_DP, maxW) else maxW)
     }
     var h by remember(entry) { mutableFloatStateOf(entry.heightDp.toFloat()) }
-    val accent = MaterialTheme.colorScheme.primary
+    val accent = LocalAccent.current
     val shape = RoundedCornerShape(20.dp)
 
     Box(Modifier.size(w.dp, h.dp)) {

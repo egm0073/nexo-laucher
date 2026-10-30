@@ -78,6 +78,7 @@ fun AppRow(
     modifier: Modifier = Modifier,
     label: String = app.label,
     iconTint: Color = textStyle.color,
+    verticalPadding: Dp = 5.dp,
 ) {
     val haptic = LocalHapticFeedback.current
     val tint = iconTint
@@ -91,7 +92,7 @@ fun AppRow(
                     onLongClick()
                 },
             )
-            .padding(horizontal = 6.dp, vertical = 5.dp),
+            .padding(horizontal = 6.dp, vertical = verticalPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         val hasIcon = iconStyle != IconStyle.NONE

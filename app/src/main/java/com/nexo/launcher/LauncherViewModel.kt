@@ -3,6 +3,7 @@ package com.nexo.launcher
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.nexo.launcher.data.AppCategory
 import com.nexo.launcher.data.AppInfo
 import com.nexo.launcher.data.AppRepository
 import com.nexo.launcher.data.Folder
@@ -42,6 +43,19 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     fun setHidden(key: String, hidden: Boolean) = update { s ->
         if (hidden) s.copy(hidden = s.hidden + key, homeItems = s.homeItems - HomeItem.app(key))
         else s.copy(hidden = s.hidden - key)
+    }
+
+    // --- Cajón por categorías ---
+    fun recordLaunch(key: String) = update { s ->
+        // Se guardan solo las más recientes para que el registro no crezca sin límite.
+        val used = (s.lastUsed + (key to System.currentTimeMillis()))
+            .entries.sortedByDescending { it.value }.take(MAX_LAST_USED)
+            .associate { it.key to it.value }
+        s.copy(lastUsed = used)
+    }
+
+    fun setCategory(key: String, category: AppCategory?) = update { s ->
+        s.copy(categoryOverrides = if (category == null) s.categoryOverrides - key else s.categoryOverrides + (key to category))
     }
 
     // --- Carpetas ---
@@ -95,6 +109,10 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         val list = s.widgets.toMutableList()
         Collections.swap(list, list.indexOf(entry), list.indexOf(other))
         s.copy(widgets = list)
+    }
+
+    private companion object {
+        const val MAX_LAST_USED = 300
     }
 }
 

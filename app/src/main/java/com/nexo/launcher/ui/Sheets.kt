@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,6 +38,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import com.nexo.launcher.LauncherViewModel
+import com.nexo.launcher.data.AppCategory
 import com.nexo.launcher.data.AppInfo
 import com.nexo.launcher.data.Folder
 import com.nexo.launcher.data.HomeItem
@@ -55,14 +58,25 @@ fun AppActionsSheet(
     onNewFolder: () -> Unit,
 ) {
     var pickFolder by remember { mutableStateOf(false) }
+    var pickCategory by remember { mutableStateOf(false) }
     val homeKey = HomeItem.app(app.key)
     val onHome = homeKey in settings.homeItems
     val hidden = app.key in settings.hidden
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
             SheetHeader(app.label + if (app.isWork) " (trabajo)" else "")
-            if (!pickFolder) {
+            if (pickCategory) {
+                val current = settings.categoryOverrides[app.key] ?: app.category
+                AppCategory.entries.forEach { c ->
+                    SheetItem(
+                        (if (c == current) "✓  " else "     ") + c.label,
+                        color = if (c == current) MaterialTheme.colorScheme.primary else Color.Unspecified,
+                    ) {
+                        vm.setCategory(app.key, if (c == app.category) null else c); onDismiss()
+                    }
+                }
+            } else if (!pickFolder) {
                 SheetItem(if (onHome) "Quitar de inicio" else "Añadir a inicio") {
                     vm.toggleHome(homeKey); onDismiss()
                 }
@@ -74,6 +88,7 @@ fun AppActionsSheet(
                     SheetItem("Quitar de la carpeta") { vm.removeFromFolder(folderId, app.key); onDismiss() }
                 }
                 SheetItem("Añadir a carpeta…") { pickFolder = true }
+                SheetItem("Cambiar categoría…") { pickCategory = true }
                 SheetItem(if (hidden) "Mostrar en el cajón" else "Ocultar app") {
                     vm.setHidden(app.key, !hidden); onDismiss()
                 }
