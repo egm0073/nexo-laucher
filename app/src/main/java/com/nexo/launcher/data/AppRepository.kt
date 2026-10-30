@@ -39,6 +39,8 @@ data class AppInfo(
     val component: ComponentName,
     val user: UserHandle,
     val isWork: Boolean,
+    val category: AppCategory = AppCategory.OTHER,
+    val installedAt: Long = 0L,
 )
 
 class AppRepository(private val context: Context) {
@@ -89,7 +91,11 @@ class AppRepository(private val context: Context) {
                 if (cn.packageName == context.packageName) continue
                 val key = "${cn.flattenToString()}#$serial"
                 infos[key] = info
-                result += AppInfo(key, info.label.toString().trim(), cn.packageName, cn, user, user != me)
+                result += AppInfo(
+                    key, info.label.toString().trim(), cn.packageName, cn, user, user != me,
+                    category = autoCategory(info.applicationInfo, cn.packageName),
+                    installedAt = info.firstInstallTime,
+                )
             }
         }
         return result.sortedWith(compareBy(collator) { it.label })

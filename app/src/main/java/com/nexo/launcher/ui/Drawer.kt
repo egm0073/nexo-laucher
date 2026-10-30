@@ -44,6 +44,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
@@ -63,16 +64,24 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nexo.launcher.data.AlignChoice
+import com.nexo.launcher.data.AppCategory
 import com.nexo.launcher.data.AppInfo
 import com.nexo.launcher.data.AppRepository
+import com.nexo.launcher.data.DrawerRecent
 import com.nexo.launcher.data.LauncherSettings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private sealed interface DrawerRow {
-    data class Header(val letter: Char) : DrawerRow
+    data class Header(val title: String) : DrawerRow
     data class Item(val app: AppInfo) : DrawerRow
+
+    /** Despliega o pliega las apps de una categoría que no están entre las más recientes. */
+    data class More(val category: AppCategory, val count: Int, val expanded: Boolean) : DrawerRow
 }
+
+/** Apps que se ven sin desplegar en cada categoría. */
+private const val RECENT_PER_CATEGORY = 10
 
 @Composable
 fun AppDrawer(
@@ -98,23 +107,29 @@ fun AppDrawer(
         else visible.filter { it.label.normalized().contains(q) }
             .sortedBy { if (it.label.normalized().startsWith(q)) 0 else 1 }
     }
-    val rows: List<DrawerRow> = remember(filtered, q) {
-        if (q.isNotEmpty()) filtered.map { DrawerRow.Item(it) }
-        else buildList<DrawerRow> {
-            var last: Char? = null
-            for (app in filtered) {
-                val s = sectionOf(app.label)
-                if (s != last) {
-                    add(DrawerRow.Header(s))
-                    last = s
+    // El cajón se vuelve a crear al abrirlo, así que las categorías empiezan siempre plegadas.
+    var expanded by remember { mutableStateOf(emptySet<String>()) }
+    val rows: List<DrawerRow> = remember(filtered, q, settings.drawerByCategory, settings.drawerRecent, settings.categoryOverrides, settings.lastUsed, expanded) {
+        when {
+            q.isNotEmpty() -> filtered.map { DrawerRow.Item(it) }
+            settings.drawerByCategory -> categoryRows(filtered, settings, expanded)
+            else -> buildList<DrawerRow> {
+                var last: Char? = null
+                for (app in filtered) {
+                    val s = sectionOf(app.label)
+                    if (s != last) {
+                        add(DrawerRow.Header(s.toString()))
+                        last = s
+                    }
+                    add(DrawerRow.Item(app))
                 }
-                add(DrawerRow.Item(app))
             }
         }
     }
-    val letterIndex: Map<Char, Int> = remember(rows) {
-        buildMap<Char, Int> {
-            rows.forEachIndexed { i, r -> if (r is DrawerRow.Header && r.letter !in this) put(r.letter, i) }
+    val letterIndex: Map<Char, Int> = remember(rows, settings.drawerByCategory) {
+        if (settings.drawerByCategory) emptyMap()
+        else buildMap<Char, Int> {
+            rows.forEachIndexed { i, r -> if (r is DrawerRow.Header && r.title[0] !in this) put(r.title[0], i) }
         }
     }
 
@@ -244,11 +259,17 @@ fun AppDrawer(
                 ) {
                     itemsIndexed(
                         rows,
-                        key = { i, r -> if (r is DrawerRow.Item) r.app.key else "h$i" },
+                        key = { i, r ->
+                            when (r) {
+                                is DrawerRow.Item -> r.app.key
+                                is DrawerRow.More -> "more:${r.category.name}"
+                                is DrawerRow.Header -> "h$i"
+                            }
+                        },
                     ) { _, row ->
                         when (row) {
                             is DrawerRow.Header -> Text(
-                                row.letter.toString(),
+                                row.title,
                                 color = accent,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp,
@@ -266,6 +287,21 @@ fun AppDrawer(
                                 onClick = { launch(row.app) },
                                 onLongClick = { onLongPress(row.app) },
                                 modifier = Modifier.fillMaxWidth(),
+                                verticalPadding = 10.dp,
+                            )
+
+                            is DrawerRow.More -> Text(
+                                if (row.expanded) "Mostrar menos  ▴" else "${row.count} más  ▾",
+                                color = fg.copy(alpha = 0.6f),
+                                fontSize = 14.sp,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable {
+                                        val name = row.category.name
+                                        expanded = if (row.expanded) expanded - name else expanded + name
+                                    }
+                                    .padding(horizontal = 6.dp, vertical = 12.dp),
                             )
                         }
                     }
@@ -302,6 +338,33 @@ fun AppDrawer(
                     )
                 }
             }
+        }
+    }
+}
+
+/**
+ * Una cabecera por categoría con sus [RECENT_PER_CATEGORY] apps más recientes debajo; el resto,
+ * por orden alfabético, queda plegado tras una fila «N más».
+ */
+private fun categoryRows(apps: List<AppInfo>, settings: LauncherSettings, expanded: Set<String>): List<DrawerRow> {
+    val recency: (AppInfo) -> Long = when (settings.drawerRecent) {
+        DrawerRecent.USED -> { app -> settings.lastUsed[app.key] ?: 0L }
+        DrawerRecent.INSTALLED -> { app -> app.installedAt }
+    }
+    val byCategory = apps.groupBy { settings.categoryOverrides[it.key] ?: it.category }
+    return buildList {
+        for (category in AppCategory.entries) {
+            val list = byCategory[category] ?: continue
+            add(DrawerRow.Header(category.label))
+            // Las apps sin abrir todavía se ordenan por fecha de instalación; la lista de entrada ya es alfabética.
+            val sorted = list.sortedWith(compareByDescending(recency).thenByDescending { it.installedAt })
+            val recent = sorted.take(RECENT_PER_CATEGORY)
+            recent.forEach { add(DrawerRow.Item(it)) }
+            val rest = list.filter { it !in recent }
+            if (rest.isEmpty()) continue
+            val open = category.name in expanded
+            if (open) rest.forEach { add(DrawerRow.Item(it)) }
+            add(DrawerRow.More(category, rest.size, open))
         }
     }
 }
