@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -104,174 +105,178 @@ fun LauncherApp(
         screen = Screen.HOME
     }
 
+    val widgetAreas = remember { WidgetAreas() }
+
     LauncherTheme(accent = Color(settings.accent)) {
-        Box(Modifier.fillMaxSize()) {
-            if (settings.loaded) {
-                // Deslizar a la izquierda en inicio abre la segunda pantalla, la de widgets.
-                HorizontalPager(
-                    state = pager,
-                    userScrollEnabled = !editingWidgets,
-                    beyondViewportPageCount = 1,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = settings.dim)),
-                ) { page ->
-                    if (page == 0) {
-                        HomeScreen(
-                            settings = settings,
-                            apps = apps,
-                            repo = vm.repo,
-                            widgetHost = widgetHost,
-                            onOpenDrawer = { screen = Screen.DRAWER },
-                            onSwipeDown = { actions.expandNotifications() },
-                            onLongPressBackground = { sheet = SheetTarget.HomeMenu },
-                            onLaunch = launch,
-                            onAppLongPress = { app, folderId -> sheet = SheetTarget.App(app, folderId) },
-                            onFolderLongPress = { sheet = SheetTarget.FolderMenu(it) },
-                            editingWidgets = editingWidgets && pager.currentPage == 0,
-                            onStartEditing = { editingWidgets = true },
-                            onDoneEditing = { editingWidgets = false },
-                            onResizeWidget = { e, w, h -> vm.placeWidget(e.id, e.x, e.y, w, h) },
-                            onDeleteWidget = { actions.deleteWidget(it) },
-                        )
-                    } else {
-                        WidgetPage(
-                            settings = settings,
-                            widgetHost = widgetHost,
-                            editing = editingWidgets && pager.currentPage == 1,
-                            onOpenDrawer = { screen = Screen.DRAWER },
-                            onSwipeDown = { actions.expandNotifications() },
-                            onLongPressBackground = { sheet = SheetTarget.WidgetPageMenu },
-                            onPlace = vm::placeWidget,
-                            onDelete = { actions.deleteWidget(it) },
-                            onStartEditing = { editingWidgets = true },
-                            onDoneEditing = { editingWidgets = false },
-                        )
+        CompositionLocalProvider(LocalWidgetAreas provides widgetAreas) {
+            Box(Modifier.fillMaxSize()) {
+                if (settings.loaded) {
+                    // Deslizar a la izquierda en inicio abre la segunda pantalla, la de widgets.
+                    HorizontalPager(
+                        state = pager,
+                        userScrollEnabled = !editingWidgets,
+                        beyondViewportPageCount = 1,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = settings.dim)),
+                    ) { page ->
+                        if (page == 0) {
+                            HomeScreen(
+                                settings = settings,
+                                apps = apps,
+                                repo = vm.repo,
+                                widgetHost = widgetHost,
+                                onOpenDrawer = { screen = Screen.DRAWER },
+                                onSwipeDown = { actions.expandNotifications() },
+                                onLongPressBackground = { sheet = SheetTarget.HomeMenu },
+                                onLaunch = launch,
+                                onAppLongPress = { app, folderId -> sheet = SheetTarget.App(app, folderId) },
+                                onFolderLongPress = { sheet = SheetTarget.FolderMenu(it) },
+                                editingWidgets = editingWidgets && pager.currentPage == 0,
+                                onStartEditing = { editingWidgets = true },
+                                onDoneEditing = { editingWidgets = false },
+                                onResizeWidget = { e, w, h -> vm.placeWidget(e.id, e.x, e.y, w, h) },
+                                onDeleteWidget = { actions.deleteWidget(it) },
+                            )
+                        } else {
+                            WidgetPage(
+                                settings = settings,
+                                widgetHost = widgetHost,
+                                editing = editingWidgets && pager.currentPage == 1,
+                                onOpenDrawer = { screen = Screen.DRAWER },
+                                onSwipeDown = { actions.expandNotifications() },
+                                onLongPressBackground = { sheet = SheetTarget.WidgetPageMenu },
+                                onPlace = vm::placeWidget,
+                                onDelete = { actions.deleteWidget(it) },
+                                onStartEditing = { editingWidgets = true },
+                                onDoneEditing = { editingWidgets = false },
+                            )
+                        }
                     }
+                }
+
+                AnimatedVisibility(
+                    visible = screen == Screen.DRAWER,
+                    enter = slideInVertically { it / 3 } + fadeIn(),
+                    exit = slideOutVertically { it / 3 } + fadeOut(),
+                ) {
+                    AppDrawer(
+                        settings = settings,
+                        apps = apps,
+                        repo = vm.repo,
+                        onLaunch = launch,
+                        onLongPress = { sheet = SheetTarget.App(it, null) },
+                        onClose = { screen = Screen.HOME },
+                        onOpenSettings = { screen = Screen.SETTINGS },
+                    )
+                }
+
+                AnimatedVisibility(
+                    visible = screen == Screen.SETTINGS,
+                    enter = slideInHorizontally { it } + fadeIn(),
+                    exit = slideOutHorizontally { it } + fadeOut(),
+                ) {
+                    SettingsScreen(
+                        settings = settings,
+                        apps = apps,
+                        vm = vm,
+                        actions = actions,
+                        onBack = { screen = Screen.HOME },
+                        onAddWidget = { sheet = SheetTarget.WidgetPicker(0) },
+                        onNewFolder = { dialog = DialogTarget.NewFolder(null) },
+                        onRenameFolder = { dialog = DialogTarget.Rename(it) },
+                    )
                 }
             }
 
-            AnimatedVisibility(
-                visible = screen == Screen.DRAWER,
-                enter = slideInVertically { it / 3 } + fadeIn(),
-                exit = slideOutVertically { it / 3 } + fadeOut(),
-            ) {
-                AppDrawer(
+            when (val t = sheet) {
+                is SheetTarget.App -> AppActionsSheet(
+                    app = t.app,
+                    folderId = t.folderId,
                     settings = settings,
-                    apps = apps,
-                    repo = vm.repo,
-                    onLaunch = launch,
-                    onLongPress = { sheet = SheetTarget.App(it, null) },
-                    onClose = { screen = Screen.HOME },
-                    onOpenSettings = { screen = Screen.SETTINGS },
-                )
-            }
-
-            AnimatedVisibility(
-                visible = screen == Screen.SETTINGS,
-                enter = slideInHorizontally { it } + fadeIn(),
-                exit = slideOutHorizontally { it } + fadeOut(),
-            ) {
-                SettingsScreen(
-                    settings = settings,
-                    apps = apps,
                     vm = vm,
-                    actions = actions,
-                    onBack = { screen = Screen.HOME },
-                    onAddWidget = { sheet = SheetTarget.WidgetPicker(0) },
-                    onNewFolder = { dialog = DialogTarget.NewFolder(null) },
-                    onRenameFolder = { dialog = DialogTarget.Rename(it) },
+                    onDismiss = { sheet = null },
+                    onNewFolder = {
+                        sheet = null
+                        dialog = DialogTarget.NewFolder(t.app.key)
+                    },
                 )
+
+                is SheetTarget.FolderMenu -> FolderActionsSheet(
+                    folder = t.folder,
+                    vm = vm,
+                    onDismiss = { sheet = null },
+                    onRename = {
+                        sheet = null
+                        dialog = DialogTarget.Rename(t.folder)
+                    },
+                )
+
+                SheetTarget.HomeMenu -> HomeMenuSheet(
+                    onDismiss = { sheet = null },
+                    onAddWidget = { sheet = SheetTarget.WidgetPicker(0) },
+                    onNewFolder = {
+                        sheet = null
+                        dialog = DialogTarget.NewFolder(null)
+                    },
+                    onWallpaper = {
+                        sheet = null
+                        actions.openWallpaperPicker()
+                    },
+                    onSettings = {
+                        sheet = null
+                        screen = Screen.SETTINGS
+                    },
+                )
+
+                SheetTarget.WidgetPageMenu -> WidgetPageMenuSheet(
+                    hasWidgets = settings.widgets.any { it.page == 1 },
+                    onDismiss = { sheet = null },
+                    onAddWidget = { sheet = SheetTarget.WidgetPicker(1) },
+                    onEdit = {
+                        sheet = null
+                        editingWidgets = true
+                    },
+                    onSettings = {
+                        sheet = null
+                        screen = Screen.SETTINGS
+                    },
+                )
+
+                is SheetTarget.WidgetPicker -> WidgetPickerSheet(
+                    onPick = {
+                        sheet = null
+                        actions.addWidget(it, t.page)
+                    },
+                    onDismiss = { sheet = null },
+                )
+
+                null -> Unit
             }
-        }
 
-        when (val t = sheet) {
-            is SheetTarget.App -> AppActionsSheet(
-                app = t.app,
-                folderId = t.folderId,
-                settings = settings,
-                vm = vm,
-                onDismiss = { sheet = null },
-                onNewFolder = {
-                    sheet = null
-                    dialog = DialogTarget.NewFolder(t.app.key)
-                },
-            )
+            when (val d = dialog) {
+                is DialogTarget.NewFolder -> NameDialog(
+                    title = "Nueva carpeta",
+                    initial = "",
+                    onConfirm = { name ->
+                        vm.createFolder(name, d.appKey)
+                        dialog = null
+                    },
+                    onDismiss = { dialog = null },
+                )
 
-            is SheetTarget.FolderMenu -> FolderActionsSheet(
-                folder = t.folder,
-                vm = vm,
-                onDismiss = { sheet = null },
-                onRename = {
-                    sheet = null
-                    dialog = DialogTarget.Rename(t.folder)
-                },
-            )
+                is DialogTarget.Rename -> NameDialog(
+                    title = "Renombrar carpeta",
+                    initial = d.folder.name,
+                    onConfirm = { name ->
+                        vm.renameFolder(d.folder.id, name)
+                        dialog = null
+                    },
+                    onDismiss = { dialog = null },
+                )
 
-            SheetTarget.HomeMenu -> HomeMenuSheet(
-                onDismiss = { sheet = null },
-                onAddWidget = { sheet = SheetTarget.WidgetPicker(0) },
-                onNewFolder = {
-                    sheet = null
-                    dialog = DialogTarget.NewFolder(null)
-                },
-                onWallpaper = {
-                    sheet = null
-                    actions.openWallpaperPicker()
-                },
-                onSettings = {
-                    sheet = null
-                    screen = Screen.SETTINGS
-                },
-            )
-
-            SheetTarget.WidgetPageMenu -> WidgetPageMenuSheet(
-                hasWidgets = settings.widgets.any { it.page == 1 },
-                onDismiss = { sheet = null },
-                onAddWidget = { sheet = SheetTarget.WidgetPicker(1) },
-                onEdit = {
-                    sheet = null
-                    editingWidgets = true
-                },
-                onSettings = {
-                    sheet = null
-                    screen = Screen.SETTINGS
-                },
-            )
-
-            is SheetTarget.WidgetPicker -> WidgetPickerSheet(
-                onPick = {
-                    sheet = null
-                    actions.addWidget(it, t.page)
-                },
-                onDismiss = { sheet = null },
-            )
-
-            null -> Unit
-        }
-
-        when (val d = dialog) {
-            is DialogTarget.NewFolder -> NameDialog(
-                title = "Nueva carpeta",
-                initial = "",
-                onConfirm = { name ->
-                    vm.createFolder(name, d.appKey)
-                    dialog = null
-                },
-                onDismiss = { dialog = null },
-            )
-
-            is DialogTarget.Rename -> NameDialog(
-                title = "Renombrar carpeta",
-                initial = d.folder.name,
-                onConfirm = { name ->
-                    vm.renameFolder(d.folder.id, name)
-                    dialog = null
-                },
-                onDismiss = { dialog = null },
-            )
-
-            null -> Unit
+                null -> Unit
+            }
         }
     }
 }

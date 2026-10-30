@@ -15,7 +15,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableFloatStateOf
 import kotlin.math.roundToInt
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitVerticalTouchSlopOrCancellation
+import androidx.compose.foundation.gestures.verticalDrag
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -274,7 +285,20 @@ private fun HomeWidget(
     }
 }
 
-/** Deslizar arriba/abajo y mantener pulsado el fondo, común a las dos pantallas de inicio. */
+/** Zonas de pantalla ocupadas por widgets (coordenadas de la raíz). */
+class WidgetAreas {
+    private val rects = mutableMapOf<Int, Rect>()
+    fun set(id: Int, rect: Rect) { rects[id] = rect }
+    fun remove(id: Int) { rects.remove(id) }
+    operator fun contains(point: Offset): Boolean = rects.values.any { it.contains(point) }
+}
+
+val LocalWidgetAreas = staticCompositionLocalOf { WidgetAreas() }
+
+/**
+ * Deslizar arriba/abajo y mantener pulsado el fondo, común a las dos pantallas de inicio.
+ * Los gestos que empiezan encima de un widget se dejan al widget, para que pueda desplazarse.
+ */
 @Composable
 fun Modifier.homeGestures(
     onSwipeUp: () -> Unit,
@@ -286,23 +310,35 @@ fun Modifier.homeGestures(
     val swipeDown by rememberUpdatedState(onSwipeDown)
     val downEnabled by rememberUpdatedState(swipeDownEnabled)
     val longPress by rememberUpdatedState(onLongPress)
+    val widgets = LocalWidgetAreas.current
+    val origin = remember { floatArrayOf(0f, 0f) }
+    fun overWidget(local: Offset) = Offset(local.x + origin[0], local.y + origin[1]) in widgets
+
     return this
+        .onGloballyPositioned { c ->
+            val p = c.positionInRoot()
+            origin[0] = p.x
+            origin[1] = p.y
+        }
         .pointerInput(Unit) {
             val threshold = 64.dp.toPx()
-            var total = 0f
-            detectVerticalDragGestures(
-                onDragStart = { total = 0f },
-                onDragEnd = {
-                    if (total < -threshold) swipeUp()
-                    else if (total > threshold && downEnabled) swipeDown()
-                },
-                onVerticalDrag = { change, dy ->
-                    total += dy
+            awaitEachGesture {
+                val down = awaitFirstDown(requireUnconsumed = false)
+                if (overWidget(down.position)) return@awaitEachGesture
+                var total = 0f
+                val drag = awaitVerticalTouchSlopOrCancellation(down.id) { change, over ->
+                    total += over
                     change.consume()
-                },
-            )
+                } ?: return@awaitEachGesture
+                verticalDrag(drag.id) { change ->
+                    total += change.positionChange().y
+                    change.consume()
+                }
+                if (total < -threshold) swipeUp()
+                else if (total > threshold && downEnabled) swipeDown()
+            }
         }
-        .pointerInput(Unit) { detectTapGestures(onLongPress = { longPress() }) }
+        .pointerInput(Unit) { detectTapGestures(onLongPress = { if (!overWidget(it)) longPress() }) }
 }
 
 @Composable
@@ -410,7 +446,14 @@ fun HostedWidget(
     val info = remember(entry.id) { AppWidgetManager.getInstance(ctx).getAppWidgetInfo(entry.id) }
     val viewRef = remember { AtomicReference<AppWidgetHostView?>(null) }
 
-    Box(modifier.clip(RoundedCornerShape(20.dp))) {
+    val areas = LocalWidgetAreas.current
+    DisposableEffect(entry.id) { onDispose { areas.remove(entry.id) } }
+
+    Box(
+        modifier
+            .clip(RoundedCornerShape(20.dp))
+            .onGloballyPositioned { areas.set(entry.id, it.boundsInRoot()) },
+    ) {
         if (info == null) {
             Text(
                 "Widget no disponible",
