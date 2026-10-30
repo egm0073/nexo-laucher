@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity(), LauncherActions {
         )
         super.onCreate(savedInstanceState)
         widgetManager = AppWidgetManager.getInstance(this)
-        widgetHost = AppWidgetHost(applicationContext, WIDGET_HOST_ID)
+        widgetHost = NexoWidgetHost(applicationContext, WIDGET_HOST_ID)
         pendingWidgetId = savedInstanceState?.getInt(KEY_PENDING, -1) ?: -1
         pendingWidgetPage = savedInstanceState?.getInt(KEY_PENDING_PAGE, 0) ?: 0
 

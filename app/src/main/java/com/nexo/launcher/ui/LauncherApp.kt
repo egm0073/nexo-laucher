@@ -84,6 +84,15 @@ fun LauncherApp(
         }
     }
 
+    // Al añadir un widget a la segunda pantalla se entra directamente en el modo de ajuste.
+    val widgetPageCount = settings.widgets.count { it.page == 1 }
+    var lastWidgetPageCount by remember { mutableStateOf(-1) }
+    LaunchedEffect(widgetPageCount, settings.loaded) {
+        if (!settings.loaded) return@LaunchedEffect
+        if (lastWidgetPageCount >= 0 && widgetPageCount > lastWidgetPageCount) editingWidgets = true
+        lastWidgetPageCount = widgetPageCount
+    }
+
     BackHandler(enabled = screen != Screen.HOME) { screen = Screen.HOME }
     BackHandler(enabled = screen == Screen.HOME && !editingWidgets && pager.currentPage != 0) {
         scope.launch { pager.animateScrollToPage(0) }
@@ -129,6 +138,7 @@ fun LauncherApp(
                             onLongPressBackground = { sheet = SheetTarget.WidgetPageMenu },
                             onPlace = vm::placeWidget,
                             onDelete = { actions.deleteWidget(it) },
+                            onStartEditing = { editingWidgets = true },
                             onDoneEditing = { editingWidgets = false },
                         )
                     }

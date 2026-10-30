@@ -45,6 +45,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.nexo.launcher.LongPressWidgetView
 import com.nexo.launcher.data.AppInfo
 import com.nexo.launcher.data.AppRepository
 import com.nexo.launcher.data.Folder
@@ -328,7 +329,12 @@ private fun InfoLine(settings: LauncherSettings) {
 }
 
 @Composable
-fun HostedWidget(host: AppWidgetHost, entry: WidgetEntry, modifier: Modifier = Modifier) {
+fun HostedWidget(
+    host: AppWidgetHost,
+    entry: WidgetEntry,
+    modifier: Modifier = Modifier,
+    onLongPress: (() -> Unit)? = null,
+) {
     val ctx = LocalContext.current
     val density = LocalDensity.current
     val info = remember(entry.id) { AppWidgetManager.getInstance(ctx).getAppWidgetInfo(entry.id) }
@@ -344,6 +350,7 @@ fun HostedWidget(host: AppWidgetHost, entry: WidgetEntry, modifier: Modifier = M
         } else {
             AndroidView(
                 factory = { c -> host.createView(c, entry.id, info).also { viewRef.set(it) } },
+                update = { view -> (view as? LongPressWidgetView)?.onLongPress = onLongPress },
                 modifier = Modifier
                     .fillMaxSize()
                     .onSizeChanged { size ->

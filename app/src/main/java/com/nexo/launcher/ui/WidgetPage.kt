@@ -56,6 +56,7 @@ fun WidgetPage(
     onLongPressBackground: () -> Unit,
     onPlace: (id: Int, x: Int, y: Int, widthDp: Int, heightDp: Int) -> Unit,
     onDelete: (Int) -> Unit,
+    onStartEditing: () -> Unit,
     onDoneEditing: () -> Unit,
 ) {
     val widgets = settings.widgets.filter { it.page == 1 }
@@ -85,14 +86,14 @@ fun WidgetPage(
             val areaH = maxHeight.value
             if (widgets.isEmpty()) {
                 Text(
-                    "Mantén pulsado el fondo para añadir un widget a esta pantalla.",
+                    "Mantén pulsado el fondo para añadir un widget a esta pantalla. Después, mantén pulsado el widget para moverlo o cambiar su tamaño.",
                     style = settings.homeTextStyle(scale = 0.6f, alpha = 0.8f).copy(textAlign = TextAlign.Center),
                     modifier = Modifier.align(Alignment.Center).padding(24.dp),
                 )
             }
             widgets.forEach { entry ->
                 key(entry.id) {
-                    PlacedWidget(widgetHost, entry, editing, areaW, areaH, onPlace, onDelete)
+                    PlacedWidget(widgetHost, entry, editing, areaW, areaH, onPlace, onDelete, onStartEditing)
                 }
             }
         }
@@ -128,6 +129,7 @@ private fun PlacedWidget(
     areaH: Float,
     onPlace: (Int, Int, Int, Int, Int) -> Unit,
     onDelete: (Int) -> Unit,
+    onStartEditing: () -> Unit,
 ) {
     // Valores en dp; se guardan al soltar el dedo para no escribir en disco en cada movimiento.
     var w by remember(entry, areaW) {
@@ -141,7 +143,8 @@ private fun PlacedWidget(
     val shape = RoundedCornerShape(20.dp)
 
     Box(Modifier.offset(x.dp, y.dp).size(w.dp, h.dp)) {
-        HostedWidget(host, entry, Modifier.fillMaxSize())
+        // Mantener pulsado el widget entra en el modo de mover y cambiar tamaño.
+        HostedWidget(host, entry, Modifier.fillMaxSize(), onLongPress = if (editing) null else onStartEditing)
         if (editing) {
             // Capa encima del widget: recibe los toques para que el widget no los procese.
             Box(
