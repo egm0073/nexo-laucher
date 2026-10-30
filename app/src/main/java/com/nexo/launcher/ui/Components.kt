@@ -77,9 +77,10 @@ fun AppRow(
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
     label: String = app.label,
+    iconTint: Color = textStyle.color,
 ) {
     val haptic = LocalHapticFeedback.current
-    val tint = textStyle.color
+    val tint = iconTint
     Row(
         modifier
             .clip(RoundedCornerShape(12.dp))

@@ -17,6 +17,7 @@ import com.nexo.launcher.R
 import com.nexo.launcher.data.AlignChoice
 import com.nexo.launcher.data.FontChoice
 import com.nexo.launcher.data.LauncherSettings
+import com.nexo.launcher.data.SilhouetteColor
 
 val AccentPalette: List<Long> = listOf(
     0xFFB9B2FF, 0xFF8AB4F8, 0xFF78D9EC, 0xFF81C995,
@@ -78,6 +79,14 @@ fun AlignChoice.textAlign(): TextAlign = when (this) {
 }
 
 fun LauncherSettings.foreground(): Color = if (lightText) Color.White else Color(0xFF141414)
+
+/** Color de los iconos en modo «Silueta» en la pantalla principal. */
+fun LauncherSettings.silhouetteTint(): Color = when (silhouetteColor) {
+    SilhouetteColor.BLACK -> Color.Black
+    SilhouetteColor.WHITE -> Color.White
+    SilhouetteColor.TEXT -> foreground()
+    SilhouetteColor.ACCENT -> Color(accent)
+}
 
 fun LauncherSettings.homeTextStyle(
     scale: Float = 1f,

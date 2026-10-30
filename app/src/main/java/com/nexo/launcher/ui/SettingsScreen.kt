@@ -50,6 +50,7 @@ import com.nexo.launcher.data.AlignChoice
 import com.nexo.launcher.data.AppInfo
 import com.nexo.launcher.data.Folder
 import com.nexo.launcher.data.FontChoice
+import com.nexo.launcher.data.SilhouetteColor
 import com.nexo.launcher.data.IconStyle
 import com.nexo.launcher.data.LauncherSettings
 import com.nexo.launcher.data.WidgetEntry
@@ -126,7 +127,12 @@ fun SettingsScreen(
                         vm.update { it.copy(iconSizeDp = v.roundToInt()) }
                     }
                 }
-                item { HintText("«Grises» quita el color al icono; «Silueta» usa el icono monocromo de la app con tu color de texto.") }
+                item {
+                    ChoiceRow("Color de la silueta", SilhouetteColor.entries.map { it.label to it }, settings.silhouetteColor) { v ->
+                        vm.update { it.copy(silhouetteColor = v) }
+                    }
+                }
+                item { HintText("«Grises» quita el color al icono; «Silueta» usa la forma monocroma del icono con el color elegido (en la pantalla principal; en el cajón, que es oscuro, se ven en blanco).") }
 
                 // ---------- Pantalla principal ----------
                 item { SectionTitle("Pantalla principal") }

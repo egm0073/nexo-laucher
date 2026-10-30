@@ -7,6 +7,13 @@ enum class IconStyle(val label: String) {
     SILHOUETTE("Silueta"),
 }
 
+enum class SilhouetteColor(val label: String) {
+    BLACK("Negro"),
+    WHITE("Blanco"),
+    TEXT("Como el texto"),
+    ACCENT("Acento"),
+}
+
 enum class FontChoice(val label: String) {
     SANS("Sans"),
     SERIF("Serif"),
@@ -54,6 +61,7 @@ data class LauncherSettings(
     val homeIconStyle: IconStyle = IconStyle.NONE,
     val drawerIconStyle: IconStyle = IconStyle.NONE,
     val iconSizeDp: Int = 28,
+    val silhouetteColor: SilhouetteColor = SilhouetteColor.BLACK,
     val textSizeSp: Int = 26,
     val font: FontChoice = FontChoice.SANS,
     val align: AlignChoice = AlignChoice.START,

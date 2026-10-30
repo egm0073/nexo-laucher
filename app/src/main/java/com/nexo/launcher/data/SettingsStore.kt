@@ -24,6 +24,7 @@ class SettingsStore(private val context: Context) {
         val homeIcon = stringPreferencesKey("home_icon_style")
         val drawerIcon = stringPreferencesKey("drawer_icon_style")
         val iconSize = intPreferencesKey("icon_size")
+        val silhouette = stringPreferencesKey("silhouette_color")
         val textSize = intPreferencesKey("text_size")
         val font = stringPreferencesKey("font")
         val align = stringPreferencesKey("align")
@@ -55,6 +56,7 @@ class SettingsStore(private val context: Context) {
             homeIconStyle = enumOr(p[K.homeIcon], d.homeIconStyle),
             drawerIconStyle = enumOr(p[K.drawerIcon], d.drawerIconStyle),
             iconSizeDp = p[K.iconSize] ?: d.iconSizeDp,
+            silhouetteColor = enumOr(p[K.silhouette], d.silhouetteColor),
             textSizeSp = p[K.textSize] ?: d.textSizeSp,
             font = enumOr(p[K.font], d.font),
             align = enumOr(p[K.align], d.align),
@@ -80,6 +82,7 @@ class SettingsStore(private val context: Context) {
         p[K.homeIcon] = s.homeIconStyle.name
         p[K.drawerIcon] = s.drawerIconStyle.name
         p[K.iconSize] = s.iconSizeDp
+        p[K.silhouette] = s.silhouetteColor.name
         p[K.textSize] = s.textSizeSp
         p[K.font] = s.font.name
         p[K.align] = s.align.name
