@@ -236,7 +236,6 @@ fun HomeScreen(
 
             Dock(
                 apps = remember(apps) { repo.dockApps(apps) },
-                settings = settings,
                 repo = repo,
                 onLaunch = onLaunch,
                 onLongPress = { onAppLongPress(it, null) },
@@ -259,22 +258,22 @@ fun HomeScreen(
     }
 }
 
-private val DOCK_ICON_SIZE = 44.dp
+private val DOCK_ICON_SIZE = 40.dp
 
-/** Iconos de teléfono, cámara y mensajes, siempre al pie de la pantalla de inicio. */
+/** Siluetas negras semitransparentes, para que la barra se funda con el fondo y no llame la atención. */
+private val DOCK_TINT = Color.Black.copy(alpha = 0.7f)
+
+/** Teléfono, cámara y mensajes como siluetas, siempre al pie de la pantalla de inicio. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun Dock(
     apps: List<AppInfo?>,
-    settings: LauncherSettings,
     repo: AppRepository,
     onLaunch: (AppInfo) -> Unit,
     onLongPress: (AppInfo) -> Unit,
 ) {
     if (apps.all { it == null }) return
     val haptic = LocalHapticFeedback.current
-    // Solo iconos: con «Sin iconos» en inicio se usan a color; si no, el mismo estilo que la lista.
-    val iconStyle = if (settings.homeIconStyle == IconStyle.NONE) IconStyle.COLOR else settings.homeIconStyle
     Row(
         Modifier
             .fillMaxWidth()
@@ -298,7 +297,7 @@ private fun Dock(
                     .semantics { contentDescription = app.label },
                 contentAlignment = Alignment.Center,
             ) {
-                AppIcon(app, repo, iconStyle, DOCK_ICON_SIZE, settings.silhouetteTint())
+                AppIcon(app, repo, IconStyle.SILHOUETTE, DOCK_ICON_SIZE, DOCK_TINT)
             }
         }
     }
