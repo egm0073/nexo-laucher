@@ -64,8 +64,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.nexo.launcher.LongPressWidgetView
@@ -258,9 +259,9 @@ fun HomeScreen(
     }
 }
 
-private val DOCK_LABELS = listOf("Teléfono", "Cámara", "Mensajes")
+private val DOCK_ICON_SIZE = 44.dp
 
-/** Teléfono, cámara y mensajes, siempre al pie de la pantalla de inicio. */
+/** Iconos de teléfono, cámara y mensajes, siempre al pie de la pantalla de inicio. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun Dock(
@@ -272,17 +273,17 @@ private fun Dock(
 ) {
     if (apps.all { it == null }) return
     val haptic = LocalHapticFeedback.current
-    val withIcons = settings.homeIconStyle != IconStyle.NONE
-    val labelStyle = settings.homeTextStyle(scale = if (withIcons) 0.45f else 0.6f).copy(textAlign = TextAlign.Center)
+    // Solo iconos: con «Sin iconos» en inicio se usan a color; si no, el mismo estilo que la lista.
+    val iconStyle = if (settings.homeIconStyle == IconStyle.NONE) IconStyle.COLOR else settings.homeIconStyle
     Row(
         Modifier
             .fillMaxWidth()
             .padding(top = 12.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
-        apps.forEachIndexed { i, app ->
-            if (app == null) return@forEachIndexed
-            Column(
+        apps.forEach { app ->
+            if (app == null) return@forEach
+            Box(
                 Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(12.dp))
@@ -293,14 +294,11 @@ private fun Dock(
                             onLongPress(app)
                         },
                     )
-                    .padding(vertical = 10.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                    .padding(vertical = 10.dp)
+                    .semantics { contentDescription = app.label },
+                contentAlignment = Alignment.Center,
             ) {
-                if (withIcons) {
-                    AppIcon(app, repo, settings.homeIconStyle, settings.iconSizeDp.dp * 1.2f, settings.silhouetteTint())
-                    Spacer(Modifier.height(4.dp))
-                }
-                Text(DOCK_LABELS[i], style = labelStyle, maxLines = 1)
+                AppIcon(app, repo, iconStyle, DOCK_ICON_SIZE, settings.silhouetteTint())
             }
         }
     }
