@@ -7,6 +7,13 @@ import android.appwidget.AppWidgetManager
 import android.os.BatteryManager
 import android.os.Bundle
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.mutableFloatStateOf
+import kotlin.math.roundToInt
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -71,6 +78,11 @@ fun HomeScreen(
     onLaunch: (AppInfo) -> Unit,
     onAppLongPress: (AppInfo, String?) -> Unit,
     onFolderLongPress: (Folder) -> Unit,
+    editingWidgets: Boolean,
+    onStartEditing: () -> Unit,
+    onDoneEditing: () -> Unit,
+    onResizeWidget: (WidgetEntry, widthDp: Int, heightDp: Int) -> Unit,
+    onDeleteWidget: (Int) -> Unit,
 ) {
     val byKey = remember(apps) { apps.associateBy { it.key } }
     val foldersById = remember(settings.folders) { settings.folders.associateBy { it.id } }
@@ -105,10 +117,23 @@ fun HomeScreen(
 
             if (homeWidgets.isNotEmpty()) {
                 Spacer(Modifier.height(16.dp))
-                homeWidgets.forEach { entry ->
-                    key(entry.id) {
-                        HostedWidget(widgetHost, entry, Modifier.fillMaxWidth().height(entry.heightDp.dp))
-                        Spacer(Modifier.height(12.dp))
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val maxW = maxWidth.value
+                    Column(Modifier.fillMaxWidth(), horizontalAlignment = settings.align.horizontal()) {
+                        homeWidgets.forEach { entry ->
+                            key(entry.id) {
+                                HomeWidget(
+                                    host = widgetHost,
+                                    entry = entry,
+                                    editing = editingWidgets,
+                                    maxW = maxW,
+                                    onStartEditing = onStartEditing,
+                                    onResize = onResizeWidget,
+                                    onDelete = onDeleteWidget,
+                                )
+                                Spacer(Modifier.height(12.dp))
+                            }
+                        }
                     }
                 }
             }
@@ -200,6 +225,51 @@ fun HomeScreen(
                     ) { onOpenDrawer() }
                     .padding(8.dp),
             )
+        }
+
+        if (editingWidgets) EditWidgetsBar("Tira de la esquina para cambiar el ancho y el alto", onDoneEditing)
+    }
+}
+
+/** Widget de la pantalla principal: ancho (0 = completo) y alto ajustables en el modo de ajuste. */
+@Composable
+private fun HomeWidget(
+    host: AppWidgetHost,
+    entry: WidgetEntry,
+    editing: Boolean,
+    maxW: Float,
+    onStartEditing: () -> Unit,
+    onResize: (WidgetEntry, Int, Int) -> Unit,
+    onDelete: (Int) -> Unit,
+) {
+    var w by remember(entry, maxW) {
+        mutableFloatStateOf(if (entry.widthDp > 0) entry.widthDp.toFloat().coerceIn(MIN_WIDGET_DP, maxW) else maxW)
+    }
+    var h by remember(entry) { mutableFloatStateOf(entry.heightDp.toFloat()) }
+    val accent = MaterialTheme.colorScheme.primary
+    val shape = RoundedCornerShape(20.dp)
+
+    Box(Modifier.size(w.dp, h.dp)) {
+        HostedWidget(host, entry, Modifier.fillMaxSize(), onLongPress = if (editing) null else onStartEditing)
+        if (editing) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .clip(shape)
+                    .background(accent.copy(alpha = 0.15f))
+                    .border(2.dp, accent, shape)
+                    .pointerInput(Unit) { detectTapGestures { } },
+            )
+            ResizeHandle(
+                key = Pair(entry, maxW),
+                onDrag = { dx, dy ->
+                    w = (w + dx).coerceIn(MIN_WIDGET_DP, maxW)
+                    h = (h + dy).coerceIn(MIN_WIDGET_DP, 1200f)
+                },
+                // Si ocupa casi todo el ancho se guarda como "ancho completo".
+                onDragEnd = { onResize(entry, if (w >= maxW - 1f) 0 else w.roundToInt(), h.roundToInt()) },
+            )
+            DeleteWidgetButton { onDelete(entry.id) }
         }
     }
 }

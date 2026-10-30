@@ -1,12 +1,12 @@
 package com.nexo.launcher.ui
 
 import android.appwidget.AppWidgetHost
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -40,7 +40,7 @@ import com.nexo.launcher.data.LauncherSettings
 import com.nexo.launcher.data.WidgetEntry
 import kotlin.math.roundToInt
 
-private const val MIN_WIDGET_DP = 48f
+const val MIN_WIDGET_DP = 48f
 
 /**
  * Segunda pantalla de inicio: widgets colocados libremente. En modo edición cada widget
@@ -60,8 +60,6 @@ fun WidgetPage(
     onDoneEditing: () -> Unit,
 ) {
     val widgets = settings.widgets.filter { it.page == 1 }
-
-    BackHandler(enabled = editing) { onDoneEditing() }
 
     Box(
         Modifier
@@ -99,24 +97,64 @@ fun WidgetPage(
         }
 
         if (editing) {
-            Row(
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .systemBarsPadding()
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    "Arrastra para mover · tira de la esquina para cambiar el tamaño",
-                    color = Color.White.copy(alpha = 0.85f),
-                    fontSize = 13.sp,
-                    modifier = Modifier.weight(1f),
-                )
-                Spacer(Modifier.width(12.dp))
-                Button(onClick = onDoneEditing) { Text("Listo") }
-            }
+            EditWidgetsBar("Arrastra para mover · tira de la esquina para cambiar el tamaño", onDoneEditing)
         }
+    }
+}
+
+/** Barra inferior del modo de ajuste de widgets. */
+@Composable
+fun BoxScope.EditWidgetsBar(hint: String, onDone: () -> Unit) {
+    Row(
+        Modifier
+            .align(Alignment.BottomCenter)
+            .fillMaxWidth()
+            .background(Color.Black.copy(alpha = 0.6f))
+            .systemBarsPadding()
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(hint, color = Color.White.copy(alpha = 0.85f), fontSize = 13.sp, modifier = Modifier.weight(1f))
+        Spacer(Modifier.width(12.dp))
+        Button(onClick = onDone) { Text("Listo") }
+    }
+}
+
+/** Esquina para cambiar el tamaño de un widget arrastrándola; dx y dy en dp. */
+@Composable
+fun BoxScope.ResizeHandle(key: Any, onDrag: (dx: Float, dy: Float) -> Unit, onDragEnd: () -> Unit) {
+    Box(
+        Modifier
+            .align(Alignment.BottomEnd)
+            .size(40.dp)
+            .clip(RoundedCornerShape(topStart = 20.dp, bottomEnd = 20.dp))
+            .background(MaterialTheme.colorScheme.primary)
+            .pointerInput(key) {
+                detectDragGestures(onDragEnd = onDragEnd) { change, d ->
+                    change.consume()
+                    onDrag(d.x.toDp().value, d.y.toDp().value)
+                }
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text("⤡", color = Color.Black, fontSize = 20.sp)
+    }
+}
+
+/** Botón para quitar un widget en el modo de ajuste. */
+@Composable
+fun BoxScope.DeleteWidgetButton(onClick: () -> Unit) {
+    Box(
+        Modifier
+            .align(Alignment.TopEnd)
+            .padding(6.dp)
+            .size(32.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.error)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text("✕", color = Color.White, fontSize = 16.sp)
     }
 }
 
@@ -161,35 +199,15 @@ private fun PlacedWidget(
                         }
                     },
             )
-            Box(
-                Modifier
-                    .align(Alignment.BottomEnd)
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(topStart = 20.dp, bottomEnd = 20.dp))
-                    .background(accent)
-                    .pointerInput(entry, areaW, areaH) {
-                        detectDragGestures(onDragEnd = commit) { change, d ->
-                            change.consume()
-                            w = (w + d.x.toDp().value).coerceIn(MIN_WIDGET_DP, areaW - x)
-                            h = (h + d.y.toDp().value).coerceIn(MIN_WIDGET_DP, areaH - y)
-                        }
-                    },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("⤡", color = Color.Black, fontSize = 20.sp)
-            }
-            Box(
-                Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(6.dp)
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.error)
-                    .clickable { onDelete(entry.id) },
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("✕", color = Color.White, fontSize = 16.sp)
-            }
+            ResizeHandle(
+                key = Triple(entry, areaW, areaH),
+                onDrag = { dx, dy ->
+                    w = (w + dx).coerceIn(MIN_WIDGET_DP, areaW - x)
+                    h = (h + dy).coerceIn(MIN_WIDGET_DP, areaH - y)
+                },
+                onDragEnd = commit,
+            )
+            DeleteWidgetButton { onDelete(entry.id) }
         }
     }
 }

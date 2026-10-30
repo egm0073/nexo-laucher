@@ -84,8 +84,8 @@ fun LauncherApp(
         }
     }
 
-    // Al añadir un widget a la segunda pantalla se entra directamente en el modo de ajuste.
-    val widgetPageCount = settings.widgets.count { it.page == 1 }
+    // Al añadir un widget se entra directamente en el modo de ajuste.
+    val widgetPageCount = settings.widgets.size
     var lastWidgetPageCount by remember { mutableStateOf(-1) }
     LaunchedEffect(widgetPageCount, settings.loaded) {
         if (!settings.loaded) return@LaunchedEffect
@@ -94,6 +94,7 @@ fun LauncherApp(
     }
 
     BackHandler(enabled = screen != Screen.HOME) { screen = Screen.HOME }
+    BackHandler(enabled = screen == Screen.HOME && editingWidgets) { editingWidgets = false }
     BackHandler(enabled = screen == Screen.HOME && !editingWidgets && pager.currentPage != 0) {
         scope.launch { pager.animateScrollToPage(0) }
     }
@@ -127,12 +128,17 @@ fun LauncherApp(
                             onLaunch = launch,
                             onAppLongPress = { app, folderId -> sheet = SheetTarget.App(app, folderId) },
                             onFolderLongPress = { sheet = SheetTarget.FolderMenu(it) },
+                            editingWidgets = editingWidgets && pager.currentPage == 0,
+                            onStartEditing = { editingWidgets = true },
+                            onDoneEditing = { editingWidgets = false },
+                            onResizeWidget = { e, w, h -> vm.placeWidget(e.id, e.x, e.y, w, h) },
+                            onDeleteWidget = { actions.deleteWidget(it) },
                         )
                     } else {
                         WidgetPage(
                             settings = settings,
                             widgetHost = widgetHost,
-                            editing = editingWidgets,
+                            editing = editingWidgets && pager.currentPage == 1,
                             onOpenDrawer = { screen = Screen.DRAWER },
                             onSwipeDown = { actions.expandNotifications() },
                             onLongPressBackground = { sheet = SheetTarget.WidgetPageMenu },
