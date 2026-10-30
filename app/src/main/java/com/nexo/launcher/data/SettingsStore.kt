@@ -63,7 +63,8 @@ class SettingsStore(private val context: Context) {
             textSizeSp = p[K.textSize] ?: d.textSizeSp,
             font = enumOr(p[K.font], d.font),
             align = enumOr(p[K.align], d.align),
-            accent = p[K.accent] ?: d.accent,
+            // Quien nunca cambió el acento tiene guardado el lila anterior: pasa al nuevo predeterminado, el negro.
+            accent = p[K.accent]?.takeIf { it != OLD_DEFAULT_ACCENT } ?: d.accent,
             lightText = p[K.lightText] ?: d.lightText,
             dim = p[K.dim] ?: d.dim,
             showClock = p[K.showClock] ?: d.showClock,
@@ -113,6 +114,10 @@ class SettingsStore(private val context: Context) {
         p[K.byCategory] = s.drawerByCategory
         p[K.categoryOverrides] = JSONObject(s.categoryOverrides.mapValues { it.value.name }).toString()
         p[K.lastUsed] = JSONObject(s.lastUsed).toString()
+    }
+
+    private companion object {
+        const val OLD_DEFAULT_ACCENT = 0xFFB9B2FF
     }
 
     private inline fun <reified T : Enum<T>> enumOr(name: String?, default: T): T =

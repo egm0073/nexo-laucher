@@ -65,7 +65,7 @@ data class LauncherSettings(
     val textSizeSp: Int = 26,
     val font: FontChoice = FontChoice.SANS,
     val align: AlignChoice = AlignChoice.START,
-    val accent: Long = 0xFFB9B2FF,
+    val accent: Long = 0xFF000000,
     val lightText: Boolean = true,
     val dim: Float = 0.25f,
     val showClock: Boolean = true,

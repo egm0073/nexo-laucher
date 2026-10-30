@@ -320,7 +320,8 @@ private fun AccentRow(selected: Long, onSelect: (Long) -> Unit) {
                         .size(36.dp)
                         .clip(CircleShape)
                         .background(Color(c))
-                        .border(if (isSel) 3.dp else 0.dp, Color.White, CircleShape)
+                        // Borde fino siempre, para que el negro se distinga del fondo oscuro.
+                        .border(if (isSel) 3.dp else 1.dp, if (isSel) Color.White else Color.White.copy(alpha = 0.3f), CircleShape)
                         .clickable { onSelect(c) },
                 )
             }
