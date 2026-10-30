@@ -43,7 +43,6 @@ class SettingsStore(private val context: Context) {
         val folders = stringPreferencesKey("folders")
         val widgets = stringPreferencesKey("widgets")
         val byCategory = booleanPreferencesKey("drawer_by_category")
-        val drawerRecent = stringPreferencesKey("drawer_recent")
         val categoryOverrides = stringPreferencesKey("category_overrides")
         val lastUsed = stringPreferencesKey("last_used")
     }
@@ -79,7 +78,6 @@ class SettingsStore(private val context: Context) {
             folders = p[K.folders]?.let(::decodeFolders) ?: emptyList(),
             widgets = p[K.widgets]?.let(::decodeWidgets) ?: emptyList(),
             drawerByCategory = p[K.byCategory] ?: d.drawerByCategory,
-            drawerRecent = enumOr(p[K.drawerRecent], d.drawerRecent),
             categoryOverrides = p[K.categoryOverrides]?.let(::decodeMap).orEmpty()
                 .mapNotNull { (k, v) -> runCatching { k to enumValueOf<AppCategory>(v.toString()) }.getOrNull() }
                 .toMap(),
@@ -113,7 +111,6 @@ class SettingsStore(private val context: Context) {
         p[K.folders] = encodeFolders(s.folders)
         p[K.widgets] = encodeWidgets(s.widgets)
         p[K.byCategory] = s.drawerByCategory
-        p[K.drawerRecent] = s.drawerRecent.name
         p[K.categoryOverrides] = JSONObject(s.categoryOverrides.mapValues { it.value.name }).toString()
         p[K.lastUsed] = JSONObject(s.lastUsed).toString()
     }

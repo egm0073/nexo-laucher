@@ -76,7 +76,6 @@ data class LauncherSettings(
     val swipeDownNotifications: Boolean = true,
     val drawerAutoKeyboard: Boolean = false,
     val drawerByCategory: Boolean = true,
-    val drawerRecent: DrawerRecent = DrawerRecent.USED,
     /** Categoría elegida a mano: clave de app → [AppCategory]. */
     val categoryOverrides: Map<String, AppCategory> = emptyMap(),
     /** Última vez que se abrió cada app desde el launcher: clave → milisegundos. */

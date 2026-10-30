@@ -5,7 +5,7 @@ Launcher minimalista para Android al estilo Niagara, con más opciones en la pan
 ## Funciones
 
 - **Lista de apps por texto**, sin iconos por defecto, con buscador.
-- **Cajón por categorías** (Comunicación, Redes sociales, Juegos…): cada categoría muestra sus 10 apps usadas (o instaladas) más recientemente y pliega el resto. Mantén pulsada una app → *Cambiar categoría…* para corregirla. En Ajustes se puede volver a la lista alfabética con barra A–Z.
+- **Cajón por categorías** (Comunicación, Redes sociales, Juegos…): arriba aparecen las 10 últimas apps usadas y debajo las categorías, plegadas hasta que las tocas. Mantén pulsada una app → *Cambiar categoría…* para corregirla. En Ajustes se puede volver a la lista alfabética con barra A–Z.
 - **Iconos opcionales** por separado en inicio y en el cajón: sin iconos, color, grises o silueta monocroma.
 - **Widgets**: cualquier widget de tus apps, más reloj, fecha, batería y próxima alarma integrados.
 - **Carpetas** que se despliegan en la propia lista de inicio.

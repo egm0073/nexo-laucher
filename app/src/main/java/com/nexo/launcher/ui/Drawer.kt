@@ -67,21 +67,22 @@ import com.nexo.launcher.data.AlignChoice
 import com.nexo.launcher.data.AppCategory
 import com.nexo.launcher.data.AppInfo
 import com.nexo.launcher.data.AppRepository
-import com.nexo.launcher.data.DrawerRecent
 import com.nexo.launcher.data.LauncherSettings
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 private sealed interface DrawerRow {
     data class Header(val title: String) : DrawerRow
-    data class Item(val app: AppInfo) : DrawerRow
 
-    /** Despliega o pliega las apps de una categoría que no están entre las más recientes. */
-    data class More(val category: AppCategory, val count: Int, val expanded: Boolean) : DrawerRow
+    /** [recent]: fila de la lista de recientes; la misma app puede salir también en su categoría. */
+    data class Item(val app: AppInfo, val recent: Boolean = false) : DrawerRow
+
+    /** Cabecera de categoría que se despliega o pliega al tocarla. */
+    data class Category(val category: AppCategory, val count: Int, val expanded: Boolean) : DrawerRow
 }
 
-/** Apps que se ven sin desplegar en cada categoría. */
-private const val RECENT_PER_CATEGORY = 10
+/** Apps usadas recientemente que se muestran encima de las categorías. */
+private const val RECENT_COUNT = 10
 
 @Composable
 fun AppDrawer(
@@ -109,7 +110,7 @@ fun AppDrawer(
     }
     // El cajón se vuelve a crear al abrirlo, así que las categorías empiezan siempre plegadas.
     var expanded by remember { mutableStateOf(emptySet<String>()) }
-    val rows: List<DrawerRow> = remember(filtered, q, settings.drawerByCategory, settings.drawerRecent, settings.categoryOverrides, settings.lastUsed, expanded) {
+    val rows: List<DrawerRow> = remember(filtered, q, settings.drawerByCategory, settings.categoryOverrides, settings.lastUsed, expanded) {
         when {
             q.isNotEmpty() -> filtered.map { DrawerRow.Item(it) }
             settings.drawerByCategory -> categoryRows(filtered, settings, expanded)
@@ -261,18 +262,19 @@ fun AppDrawer(
                         rows,
                         key = { i, r ->
                             when (r) {
-                                is DrawerRow.Item -> r.app.key
-                                is DrawerRow.More -> "more:${r.category.name}"
+                                is DrawerRow.Item -> if (r.recent) "recent:${r.app.key}" else r.app.key
+                                is DrawerRow.Category -> "cat:${r.category.name}"
                                 is DrawerRow.Header -> "h$i"
                             }
                         },
                     ) { _, row ->
                         when (row) {
+                            // En el modo por categorías, «Recientes» va con el mismo estilo que las categorías.
                             is DrawerRow.Header -> Text(
                                 row.title,
-                                color = accent,
+                                color = if (settings.drawerByCategory) Color.Black else accent,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
+                                fontSize = if (settings.drawerByCategory) 16.sp else 14.sp,
                                 modifier = Modifier.padding(start = 6.dp, top = 14.dp, bottom = 2.dp),
                             )
 
@@ -290,10 +292,11 @@ fun AppDrawer(
                                 verticalPadding = 10.dp,
                             )
 
-                            is DrawerRow.More -> Text(
-                                if (row.expanded) "Mostrar menos  ▴" else "${row.count} más  ▾",
-                                color = fg.copy(alpha = 0.6f),
-                                fontSize = 14.sp,
+                            is DrawerRow.Category -> Text(
+                                "${row.category.label}  (${row.count})  " + if (row.expanded) "▾" else "▸",
+                                color = Color.Black,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clip(RoundedCornerShape(12.dp))
@@ -343,28 +346,24 @@ fun AppDrawer(
 }
 
 /**
- * Una cabecera por categoría con sus [RECENT_PER_CATEGORY] apps más recientes debajo; el resto,
- * por orden alfabético, queda plegado tras una fila «N más».
+ * Arriba, las [RECENT_COUNT] apps abiertas más recientemente; debajo, una cabecera por categoría,
+ * plegada hasta que se toca, con todas sus apps por orden alfabético.
  */
 private fun categoryRows(apps: List<AppInfo>, settings: LauncherSettings, expanded: Set<String>): List<DrawerRow> {
-    val recency: (AppInfo) -> Long = when (settings.drawerRecent) {
-        DrawerRecent.USED -> { app -> settings.lastUsed[app.key] ?: 0L }
-        DrawerRecent.INSTALLED -> { app -> app.installedAt }
-    }
+    val recent = apps.filter { it.key in settings.lastUsed }
+        .sortedByDescending { settings.lastUsed[it.key] }
+        .take(RECENT_COUNT)
     val byCategory = apps.groupBy { settings.categoryOverrides[it.key] ?: it.category }
     return buildList {
+        if (recent.isNotEmpty()) {
+            add(DrawerRow.Header("Recientes"))
+            recent.forEach { add(DrawerRow.Item(it, recent = true)) }
+        }
         for (category in AppCategory.entries) {
             val list = byCategory[category] ?: continue
-            add(DrawerRow.Header(category.label))
-            // Las apps sin abrir todavía se ordenan por fecha de instalación; la lista de entrada ya es alfabética.
-            val sorted = list.sortedWith(compareByDescending(recency).thenByDescending { it.installedAt })
-            val recent = sorted.take(RECENT_PER_CATEGORY)
-            recent.forEach { add(DrawerRow.Item(it)) }
-            val rest = list.filter { it !in recent }
-            if (rest.isEmpty()) continue
             val open = category.name in expanded
-            if (open) rest.forEach { add(DrawerRow.Item(it)) }
-            add(DrawerRow.More(category, rest.size, open))
+            add(DrawerRow.Category(category, list.size, open))
+            if (open) list.forEach { add(DrawerRow.Item(it)) }
         }
     }
 }

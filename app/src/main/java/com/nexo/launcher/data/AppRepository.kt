@@ -40,7 +40,6 @@ data class AppInfo(
     val user: UserHandle,
     val isWork: Boolean,
     val category: AppCategory = AppCategory.OTHER,
-    val installedAt: Long = 0L,
 )
 
 class AppRepository(private val context: Context) {
@@ -94,7 +93,6 @@ class AppRepository(private val context: Context) {
                 result += AppInfo(
                     key, info.label.toString().trim(), cn.packageName, cn, user, user != me,
                     category = autoCategory(info.applicationInfo, cn.packageName),
-                    installedAt = info.firstInstallTime,
                 )
             }
         }

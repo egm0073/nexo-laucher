@@ -47,7 +47,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.nexo.launcher.LauncherViewModel
 import com.nexo.launcher.data.AlignChoice
-import com.nexo.launcher.data.DrawerRecent
 import com.nexo.launcher.data.AppInfo
 import com.nexo.launcher.data.Folder
 import com.nexo.launcher.data.FontChoice
@@ -190,12 +189,7 @@ fun SettingsScreen(
                 item { SectionTitle("Cajón y gestos") }
                 item { SwitchRow("Organizar por categorías", settings.drawerByCategory) { v -> vm.update { it.copy(drawerByCategory = v) } } }
                 if (settings.drawerByCategory) {
-                    item {
-                        ChoiceRow("Primero en cada categoría", DrawerRecent.entries.map { it.label to it }, settings.drawerRecent) { v ->
-                            vm.update { it.copy(drawerRecent = v) }
-                        }
-                    }
-                    item { HintText("Cada categoría muestra sus 10 apps más recientes; el resto queda plegado. Mantén pulsada una app y elige «Cambiar categoría…» si está mal clasificada.") }
+                    item { HintText("Arriba se muestran las 10 últimas apps usadas; las categorías están plegadas y se despliegan al tocarlas. Mantén pulsada una app y elige «Cambiar categoría…» si está mal clasificada.") }
                 }
                 item { SwitchRow("Abrir el teclado al abrir el cajón", settings.drawerAutoKeyboard) { v -> vm.update { it.copy(drawerAutoKeyboard = v) } } }
                 item { SwitchRow("Deslizar abajo abre notificaciones", settings.swipeDownNotifications) { v -> vm.update { it.copy(swipeDownNotifications = v) } } }

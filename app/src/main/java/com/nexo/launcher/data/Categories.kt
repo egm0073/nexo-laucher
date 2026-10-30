@@ -18,12 +18,6 @@ enum class AppCategory(val label: String) {
     OTHER("Otras"),
 }
 
-/** Qué apps aparecen primero en cada categoría. */
-enum class DrawerRecent(val label: String) {
-    USED("Usadas recientemente"),
-    INSTALLED("Instaladas recientemente"),
-}
-
 /**
  * Muchas apps (sobre todo las del sistema) no declaran categoría, así que se completa con
  * palabras clave del nombre del paquete. Se comprueban en orden: la primera que coincide gana.
