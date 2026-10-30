@@ -130,7 +130,7 @@ fun HomeScreen(
                 .fillMaxSize()
                 .systemBarsPadding()
                 .padding(horizontal = 28.dp)
-                .padding(top = 28.dp, bottom = 8.dp),
+                .padding(top = 28.dp),
             horizontalAlignment = settings.align.horizontal(),
         ) {
             if (settings.showClock || settings.showDate) ClockHeader(settings)
@@ -252,13 +252,6 @@ fun HomeScreen(
                 }
             }
 
-            Dock(
-                apps = remember(apps) { repo.dockApps(apps) },
-                repo = repo,
-                onLaunch = onLaunch,
-                onLongPress = { onAppLongPress(it, null) },
-            )
-
             Text(
                 "︿",
                 style = settings.homeTextStyle(scale = 0.7f, alpha = 0.5f),
@@ -268,7 +261,15 @@ fun HomeScreen(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                     ) { onOpenDrawer() }
-                    .padding(8.dp),
+                    .padding(horizontal = 24.dp, vertical = 2.dp),
+            )
+
+            // La barra va lo más abajo posible, justo encima de la barra de navegación del sistema.
+            Dock(
+                apps = remember(apps) { repo.dockApps(apps) },
+                repo = repo,
+                onLaunch = onLaunch,
+                onLongPress = { onAppLongPress(it, null) },
             )
         }
 
@@ -295,9 +296,7 @@ private fun Dock(
     if (apps.all { it == null }) return
     val haptic = LocalHapticFeedback.current
     Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(top = 12.dp),
+        Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
         apps.forEach { app ->
@@ -313,7 +312,7 @@ private fun Dock(
                             onLongPress(app)
                         },
                     )
-                    .padding(vertical = 10.dp)
+                    .padding(vertical = 6.dp)
                     .semantics { contentDescription = app.label },
                 contentAlignment = Alignment.Center,
             ) {
