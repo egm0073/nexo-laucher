@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import com.nexo.launcher.LauncherViewModel
 import com.nexo.launcher.data.AlignChoice
 import com.nexo.launcher.data.AppInfo
+import com.nexo.launcher.data.DateStyle
 import com.nexo.launcher.data.Folder
 import com.nexo.launcher.data.FontChoice
 import com.nexo.launcher.data.SilhouetteColor
@@ -140,6 +141,11 @@ fun SettingsScreen(
                 item { SwitchRow("Reloj", settings.showClock) { v -> vm.update { it.copy(showClock = v) } } }
                 item { SwitchRow("Formato 24 horas", settings.clock24) { v -> vm.update { it.copy(clock24 = v) } } }
                 item { SwitchRow("Fecha", settings.showDate) { v -> vm.update { it.copy(showDate = v) } } }
+                if (settings.showDate) item {
+                    ChoiceRow("Formato de la fecha", DateStyle.entries.map { it.label to it }, settings.dateStyle) { v ->
+                        vm.update { it.copy(dateStyle = v) }
+                    }
+                }
                 item { SwitchRow("Batería", settings.showBattery) { v -> vm.update { it.copy(showBattery = v) } } }
                 item { SwitchRow("Próxima alarma", settings.showNextAlarm) { v -> vm.update { it.copy(showNextAlarm = v) } } }
 

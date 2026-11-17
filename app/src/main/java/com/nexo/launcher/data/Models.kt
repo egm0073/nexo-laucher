@@ -36,6 +36,13 @@ enum class AlignChoice(val label: String) {
     END("Derecha"),
 }
 
+/** Formato de la fecha bajo el reloj. Ninguno muestra el año. */
+enum class DateStyle(val label: String) {
+    WEEKDAY("Lunes, 17 noviembre"),
+    DAY_MONTH("17 de noviembre"),
+    SHORT("17 nov"),
+}
+
 data class Folder(val id: String, val name: String, val apps: List<String>)
 
 /**
@@ -71,6 +78,7 @@ data class LauncherSettings(
     val showClock: Boolean = true,
     val clock24: Boolean = true,
     val showDate: Boolean = true,
+    val dateStyle: DateStyle = DateStyle.WEEKDAY,
     val showBattery: Boolean = true,
     val showNextAlarm: Boolean = true,
     val swipeDownNotifications: Boolean = true,
