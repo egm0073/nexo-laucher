@@ -34,6 +34,7 @@ class SettingsStore(private val context: Context) {
         val showClock = booleanPreferencesKey("show_clock")
         val clock24 = booleanPreferencesKey("clock_24")
         val showDate = booleanPreferencesKey("show_date")
+        val dateStyle = stringPreferencesKey("date_style")
         val showBattery = booleanPreferencesKey("show_battery")
         val showAlarm = booleanPreferencesKey("show_alarm")
         val swipeDown = booleanPreferencesKey("swipe_down_notif")
@@ -72,6 +73,7 @@ class SettingsStore(private val context: Context) {
             showClock = p[K.showClock] ?: d.showClock,
             clock24 = p[K.clock24] ?: d.clock24,
             showDate = p[K.showDate] ?: d.showDate,
+            dateStyle = enumOr(p[K.dateStyle], d.dateStyle),
             showBattery = p[K.showBattery] ?: d.showBattery,
             showNextAlarm = p[K.showAlarm] ?: d.showNextAlarm,
             swipeDownNotifications = p[K.swipeDown] ?: d.swipeDownNotifications,
@@ -107,6 +109,7 @@ class SettingsStore(private val context: Context) {
         p[K.showClock] = s.showClock
         p[K.clock24] = s.clock24
         p[K.showDate] = s.showDate
+        p[K.dateStyle] = s.dateStyle.name
         p[K.showBattery] = s.showBattery
         p[K.showAlarm] = s.showNextAlarm
         p[K.swipeDown] = s.swipeDownNotifications

@@ -74,6 +74,7 @@ import com.nexo.launcher.data.AppInfo
 import com.nexo.launcher.data.AppRepository
 import com.nexo.launcher.data.Folder
 import com.nexo.launcher.data.IconStyle
+import com.nexo.launcher.data.DateStyle
 import com.nexo.launcher.data.LauncherSettings
 import com.nexo.launcher.data.WidgetEntry
 import kotlinx.coroutines.delay
@@ -458,7 +459,7 @@ private fun ClockHeader(settings: LauncherSettings) {
         }
     }
     val timeFmt = remember(settings.clock24) { DateTimeFormatter.ofPattern(if (settings.clock24) "HH:mm" else "h:mm") }
-    val dateFmt = remember { DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.getDefault()) }
+    val dateFmt = remember(settings.dateStyle) { dateFormatter(settings.dateStyle) }
     val noRipple = remember { MutableInteractionSource() }
 
     Column(horizontalAlignment = settings.align.horizontal()) {
@@ -477,6 +478,17 @@ private fun ClockHeader(settings: LauncherSettings) {
             )
         }
     }
+}
+
+/** Ningún formato lleva año. «17 de noviembre» solo añade el «de» en español. */
+private fun dateFormatter(style: DateStyle): DateTimeFormatter {
+    val locale = Locale.getDefault()
+    val pattern = when (style) {
+        DateStyle.WEEKDAY -> "EEEE, d MMMM"
+        DateStyle.DAY_MONTH -> if (locale.language == "es") "d 'de' MMMM" else "d MMMM"
+        DateStyle.SHORT -> "d MMM"
+    }
+    return DateTimeFormatter.ofPattern(pattern, locale)
 }
 
 @Composable
